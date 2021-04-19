@@ -1,0 +1,15 @@
+# curl --location --request GET 'http://localhost:8080/api/redis/strings/database:redis:creator'
+GET http://localhost:8080/api/redis/strings/database:redis:creator
+
+###
+
+# curl --location --request POST 'http://localhost:8080/api/redis/strings'
+# --header 'Content-Type: application/json'
+# --data-raw '{ "database:redis:creator": "Salvatore Sanfilippo" }'
+POST http://localhost:8080/api/redis/strings
+Content-Type: application/json
+
+{ "database:redis:creator": "Salvatore Sanfilippo" }
+
+###
+
