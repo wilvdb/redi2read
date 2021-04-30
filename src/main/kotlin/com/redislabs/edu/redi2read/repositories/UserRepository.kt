@@ -1,11 +1,11 @@
 package com.redislabs.edu.redi2read.repositories
 
-import com.redislabs.edu.redi2read.models.Role
+import com.redislabs.edu.redi2read.models.User
 import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Repository
 
 @Repository
-interface RoleRepository: CrudRepository<Role, String> {
+interface UserRepository: CrudRepository<User, String> {
 
-    fun findFirstByName(role: String): Role
+    fun findFirstByEmail(email: String): User?
 }

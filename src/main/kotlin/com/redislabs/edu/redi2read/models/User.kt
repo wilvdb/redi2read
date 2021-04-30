@@ -1,5 +1,6 @@
 package com.redislabs.edu.redi2read.models
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.Reference
 import org.springframework.data.redis.core.RedisHash
@@ -8,29 +9,32 @@ import javax.validation.constraints.Email
 import javax.validation.constraints.NotNull
 import javax.validation.constraints.Size
 
+@JsonIgnoreProperties(value = ["password", "passwordConfirm"], allowSetters = true)
 @RedisHash
 class User(
     @Id
-    val id: String,
+    var id: String?,
 
     @NotNull
     @Size(min = 2, max = 48)
-    val name: String,
+    var name: String,
 
     @NotNull
     @Email
     @Indexed
-    val email: String,
+    var email: String,
 
     @NotNull
-    val password: String,
+    var password: String,
 
     @Transient
-    val passwordConfirm: String,
+    var passwordConfirm: String?,
 
     @Reference
-    val roles: HashSet<Role> = HashSet<Role>()
+    var roles: HashSet<Role> = HashSet<Role>()
 ) {
+
+    constructor(): this(null, "", "", "", "")
 
     fun addRole(role: Role) {
         roles.add(role)
