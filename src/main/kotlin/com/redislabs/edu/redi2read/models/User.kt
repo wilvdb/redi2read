@@ -1,5 +1,6 @@
 package com.redislabs.edu.redi2read.models
 
+import com.fasterxml.jackson.annotation.JsonIdentityReference
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.Reference
@@ -31,12 +32,21 @@ class User(
     var passwordConfirm: String?,
 
     @Reference
-    var roles: HashSet<Role> = HashSet<Role>()
+    @JsonIdentityReference(alwaysAsId = true)
+    var roles: HashSet<Role> = HashSet(),
+
+    @Reference
+    @JsonIdentityReference(alwaysAsId = true)
+    var books: HashSet<Book> = HashSet()
 ) {
 
     constructor(): this(null, "", "", "", "")
 
     fun addRole(role: Role) {
         roles.add(role)
+    }
+
+    fun addBook(book: Book) {
+        books.add(book)
     }
 }

@@ -35,9 +35,9 @@ class BookController(
         val books = if (pagedResult.hasContent()) pagedResult.content else emptyList<Book>()
         val response: MutableMap<String, Any> = HashMap()
         response["books"] = books
-        response["page"] = pagedResult.getNumber()
-        response["pages"] = pagedResult.getTotalPages()
-        response["total"] = pagedResult.getTotalElements()
+        response["page"] = pagedResult.number
+        response["pages"] = pagedResult.totalPages
+        response["total"] = pagedResult.totalElements
         return ResponseEntity<Any>(response, HttpHeaders(), HttpStatus.OK)
     }
 

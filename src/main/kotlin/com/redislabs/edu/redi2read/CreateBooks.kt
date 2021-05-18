@@ -40,7 +40,7 @@ class CreateBooks(
                 try {
                     logger.info(">>>> Processing Book File: " + it.path)
                     val categoryName = it.name.substring(0, it.name.lastIndexOf("_"))
-                    logger.info(">>>> Category: " + categoryName)
+                    logger.info(">>>> Category: $categoryName")
                     var category: Category
                     if (!categories.containsKey(categoryName)) {
                         category = Category(null, categoryName)
@@ -55,9 +55,9 @@ class CreateBooks(
                         book.addCategory(category)
                         bookRepository.save(book)
                     }
-                    logger.info(">>>> " + books.size + " Books Saved!")
+                    logger.info(">>>> ${books.size} Books Saved!")
                 } catch (e: IOException) {
-                    logger.info("Unable to import books: " + e.message)
+                    logger.info("Unable to import books: ${e.message}")
                 }
             }
             logger.info(">>>> Loaded Book Data and Created books...")

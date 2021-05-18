@@ -1,0 +1,12 @@
+spring:
+  redis:
+    host: localhost
+    port: 6379
+
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+
+app:
+  numberOfRatings: 5000
+  ratingStars: 5
+  numberOfCarts: 2500
