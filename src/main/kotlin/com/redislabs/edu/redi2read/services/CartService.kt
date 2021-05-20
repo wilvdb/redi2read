@@ -12,19 +12,13 @@ import com.redislabs.modules.rejson.Path
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.util.*
-import java.util.function.Consumer
 import java.util.stream.LongStream
 
 @Service
 class CartService(
-    @Autowired
-    val cartRepository: CartRepository,
-
-    @Autowired
-    val bookRepository: BookRepository,
-
-    @Autowired
-    val userRepository: UserRepository,
+    @Autowired val cartRepository: CartRepository,
+    @Autowired val bookRepository: BookRepository,
+    @Autowired val userRepository: UserRepository,
 ) {
 
     private val redisJson = JReJSON()
@@ -34,7 +28,7 @@ class CartService(
 
     fun addToCart(id: String?, item: CartItem) {
         val book: Optional<Book> = bookRepository.findById(item.isbn)
-        if (book.isPresent()) {
+        if (book.isPresent) {
             val cartKey: String = CartRepository.getKey(id)
             item.price = book.get().price
             redisJson.arrAppend(cartKey, cartItemsPath, item)
@@ -43,13 +37,13 @@ class CartService(
 
     fun removeFromCart(id: String, isbn: String) {
         val cartFinder: Optional<Cart> = cartRepository.findById(id)
-        if (cartFinder.isPresent()) {
+        if (cartFinder.isPresent) {
             val cart: Cart = cartFinder.get()
             val cartKey: String = CartRepository.getKey(cart.id)
             val cartItems: List<CartItem> = ArrayList(cart.cartItems)
-            val cartItemIndex = LongStream.range(0, cartItems.size.toLong()).filter { i: Long ->
-                cartItems[i.toInt()].isbn == isbn
-            }.findFirst()
+            val cartItemIndex = LongStream.range(0, cartItems.size.toLong())
+                .filter { cartItems[it.toInt()].isbn == isbn }
+                .findFirst()
             if (cartItemIndex.isPresent) {
                 redisJson.arrPop(cartKey, CartItem::class.java, cartItemsPath, cartItemIndex.asLong)
             }
@@ -59,10 +53,10 @@ class CartService(
     fun checkout(id: String) {
         val cart = cartRepository.findById(id).get()
         val user: User = userRepository.findById(cart.userId).get()
-        cart.cartItems.forEach(Consumer { cartItem: CartItem ->
-            val book: Book = bookRepository.findById(cartItem.isbn).get()
+        cart.cartItems.forEach {
+            val book: Book = bookRepository.findById(it.isbn).get()
             user.addBook(book)
-        })
+        }
         userRepository.save<User>(user)
         // cartRepository.delete(cart);
     }

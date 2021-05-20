@@ -2,24 +2,17 @@ package com.redislabs.edu.redi2read.controllers
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.redis.core.RedisTemplate
-
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
-import java.util.AbstractMap.SimpleEntry
-
 import org.springframework.web.server.ResponseStatusException
-
-import org.springframework.web.bind.annotation.PathVariable
-
-import org.springframework.web.bind.annotation.GetMapping
-
-
-
+import java.util.AbstractMap.SimpleEntry
 
 
 @RestController
 @RequestMapping("/api/redis")
-class HelloRedisController(@Autowired val template: RedisTemplate<String, String>) {
+class HelloRedisController(
+    @Autowired val template: RedisTemplate<String, String>
+    ) {
 
     private val STRING_KEY_PREFIX = "redi2read:strings:"
 

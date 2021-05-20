@@ -18,7 +18,7 @@ import java.io.IOException
 class CreateUsers(
     @Autowired val roleRepository: RoleRepository,
     @Autowired val userRepository: UserRepository,
-    @Autowired val passwordEncoder: BCryptPasswordEncoder
+    @Autowired val passwordEncoder: BCryptPasswordEncoder,
 ): CommandLineRunner {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -26,8 +26,8 @@ class CreateUsers(
     override fun run(vararg args: String?) {
         if (userRepository.count() == 0L) {
             // load the roles
-            val admin = roleRepository.findFirstByName("admin");
-            val customer = roleRepository.findFirstByName("customer");
+            val admin = roleRepository.findFirstByName("admin")
+            val customer = roleRepository.findFirstByName("customer")
             try {
                 // create a Jackson object mapper
                 val mapper = ObjectMapper()
@@ -40,18 +40,18 @@ class CreateUsers(
                     it.addRole(customer)
                     userRepository.save(it)
                 }
-                logger.info(">>>> " + users.size + " Users Saved!");
+                logger.info(">>>> ${users.size} Users Saved!")
             } catch (e: IOException) {
-                logger.info(">>>> Unable to import users: " + e.message);
+                logger.info(">>>> Unable to import users:  ${e.message}")
             }
             val adminUser = User(null,
                 "Adminus Admistradore",
                 "admin@example.com",
                 passwordEncoder.encode("Reindeer Flotilla"),
             null)
-            adminUser.addRole(admin);
-            userRepository.save(adminUser);
-            logger.info(">>>> Loaded User Data and Created users...");
+            adminUser.addRole(admin)
+            userRepository.save(adminUser)
+            logger.info(">>>> Loaded User Data and Created users...")
         }
     }
 }

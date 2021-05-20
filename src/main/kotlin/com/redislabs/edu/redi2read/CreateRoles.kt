@@ -10,7 +10,9 @@ import org.springframework.stereotype.Component
 
 @Component
 @Order(1)
-class CreateRoles(@Autowired val roleRepository: RoleRepository): CommandLineRunner {
+class CreateRoles(
+    @Autowired val roleRepository: RoleRepository
+    ): CommandLineRunner {
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -18,9 +20,9 @@ class CreateRoles(@Autowired val roleRepository: RoleRepository): CommandLineRun
         if (roleRepository.count() == 0L) {
             val adminRole = Role(null, "admin")
             val customerRole = Role(null, "customer")
-            roleRepository.save(adminRole);
-            roleRepository.save(customerRole);
-            logger.info(">>>> Created admin and customer roles...");
+            roleRepository.save(adminRole)
+            roleRepository.save(customerRole)
+            logger.info(">>>> Created admin and customer roles...")
         }
     }
 }

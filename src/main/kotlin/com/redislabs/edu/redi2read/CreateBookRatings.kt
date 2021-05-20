@@ -18,14 +18,10 @@ import kotlin.reflect.jvm.jvmName
 @Component
 @Order(4)
 class CreateBookRatings(
-    @Value("\${app.numberOfRatings}")
-    val numberOfRatings: Int,
-    @Value("\${app.ratingStars}")
-val ratingStars: Int,
-    @Autowired
-val redisTemplate: RedisTemplate<String, String>,
-@Autowired
-val bookRatingRepo: BookRatingRepository,
+    @Value("\${app.numberOfRatings}") val numberOfRatings: Int,
+    @Value("\${app.ratingStars}") val ratingStars: Int,
+    @Autowired val redisTemplate: RedisTemplate<String, String>,
+    @Autowired val bookRatingRepo: BookRatingRepository,
 ): CommandLineRunner {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -34,9 +30,9 @@ val bookRatingRepo: BookRatingRepository,
         if (bookRatingRepo.count() == 0L) {
             val random = Random()
             IntStream.range(0, numberOfRatings).forEach {
-                val bookId = redisTemplate.opsForSet().randomMember(Book::class.jvmName);
-                val userId = redisTemplate.opsForSet().randomMember(User::class.jvmName);
-                val stars = random.nextInt(ratingStars) + 1;
+                val bookId = redisTemplate.opsForSet().randomMember(Book::class.jvmName)
+                val userId = redisTemplate.opsForSet().randomMember(User::class.jvmName)
+                val stars = random.nextInt(ratingStars) + 1
                 val user = User()
                 user.id = userId
                 val book = Book()
@@ -45,9 +41,9 @@ val bookRatingRepo: BookRatingRepository,
                 rating.user = user
                 rating.book = book
                 rating.rating = stars
-                bookRatingRepo.save(rating);
+                bookRatingRepo.save(rating)
             }
-            logger.info(">>>> BookRating created...");
+            logger.info(">>>> BookRating created...")
         }
     }
 }

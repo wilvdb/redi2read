@@ -5,7 +5,6 @@ import com.redislabs.lettusearch.CreateOptions
 import com.redislabs.lettusearch.Field
 import com.redislabs.lettusearch.StatefulRediSearchConnection
 import io.lettuce.core.RedisCommandExecutionException
-import org.apache.naming.SelectorContext.prefix
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -18,7 +17,7 @@ import kotlin.reflect.jvm.jvmName
 @Order(6)
 class CreateBooksSearchIndex(
     @Autowired val searchConnection: StatefulRediSearchConnection<String, String>,
-    @Value("\${app.booksSearchIndexName}") val searchIndexName: String
+    @Value("\${app.booksSearchIndexName}") val searchIndexName: String,
 ): CommandLineRunner {
 
     private val logger = LoggerFactory.getLogger(javaClass)

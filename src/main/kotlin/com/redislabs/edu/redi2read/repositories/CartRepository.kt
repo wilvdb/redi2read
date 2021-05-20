@@ -41,7 +41,7 @@ class CartRepository(
     override fun <S : Cart> saveAll(carts: Iterable<S>): Iterable<S> {
         return StreamSupport //
             .stream(carts.spliterator(), false) //
-            .map { cart: S -> save(cart) } //
+            .map { save(it) } //
             .collect(Collectors.toList())
     }
 
@@ -61,7 +61,8 @@ class CartRepository(
 
     override fun findAllById(ids: Iterable<String?>): Iterable<Cart> {
         val keys = StreamSupport.stream(ids.spliterator(), false) //
-            .map { id: String? -> getKey(id) }.toArray { arrayOf(it.toString()) }
+            .map { getKey(it) }
+            .toArray { arrayOf(it.toString()) }
         return redisJson.mget(Cart::class.java, *keys) as Iterable<Cart>
     }
 
@@ -80,7 +81,7 @@ class CartRepository(
     override fun deleteAll(carts: Iterable<Cart>) {
         val keys = StreamSupport //
             .stream(carts.spliterator(), false) //
-            .map { cart: Cart -> idPrefix + cart.id } //
+            .map { idPrefix + it.id } //
             .collect(Collectors.toList())
         redisSets().operations.delete(keys)
     }

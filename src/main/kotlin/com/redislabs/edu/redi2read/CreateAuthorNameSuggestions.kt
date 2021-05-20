@@ -25,12 +25,10 @@ class CreateAuthorNameSuggestions(
     override fun run(vararg args: String?) {
         if (!redisTemplate.hasKey(autoCompleteKey)) {
             val commands = searchConnection.sync()
-            bookRepository.findAll().forEach {book ->
-                book.authors?.forEach{ author ->
-                    run {
-                        val suggestion = Suggestion.builder(author).score(1.0).build()
+            bookRepository.findAll().forEach { book ->
+                book.authors?.forEach {
+                        val suggestion = Suggestion.builder(it).score(1.0).build()
                         commands.sugadd(autoCompleteKey, suggestion)
-                    }
                 }
             }
             logger.info(">>>> Created Author Name Suggestions...");

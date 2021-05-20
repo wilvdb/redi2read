@@ -11,9 +11,9 @@ class Config {
 
     @Bean
     fun redisTemplate(connectionFactory: RedisConnectionFactory): RedisTemplate<Any, Any> {
-        val template = RedisTemplate<Any, Any>();
-        template.setConnectionFactory(connectionFactory);
-        return template;
+        val template = RedisTemplate<Any, Any>()
+        template.setConnectionFactory(connectionFactory)
+        return template
     }
 
     @Bean

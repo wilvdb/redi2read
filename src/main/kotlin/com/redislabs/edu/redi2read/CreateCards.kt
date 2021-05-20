@@ -26,10 +26,12 @@ class CreateCards(
     @Autowired val cartRepository: CartRepository,
     @Autowired val bookRepository: BookRepository,
     @Autowired val cartService: CartService,
-    @Value("\${app.numberOfCarts}") val numberOfCarts: Int
+    @Value("\${app.numberOfCarts}") val numberOfCarts: Int,
 ) : CommandLineRunner {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    companion object {
+        private val logger = LoggerFactory.getLogger(javaClass)
+    }
 
     override fun run(vararg args: String?) {
         if (cartRepository.count() == 0L) {
@@ -37,16 +39,16 @@ class CreateCards(
             // loops for the number of carts to create
             IntStream.range(0, numberOfCarts).forEach {
                 // get a random user
-                val userId: String = redisTemplate.opsForSet().randomMember(User::class.jvmName);
+                val userId: String = redisTemplate.opsForSet().randomMember(User::class.jvmName)
                 // make a cart for the user
                 // get between 1 and 7 books
                 val books = getRandomBooks(bookRepository, 7)
                 val cart = Cart(null, userId, getCartItemsForBooks(books))
                 // save the cart
-                cartRepository.save(cart);
+                cartRepository.save(cart)
                 // randomly checkout carts
                 if (random.nextBoolean()) {
-                    cartService.checkout(cart.id!!);
+                    cartService.checkout(cart.id!!)
                 }
             }
             logger.info(">>>> Created Carts...");
@@ -66,7 +68,7 @@ class CreateCards(
 
     private fun  getCartItemsForBooks(books: Set<Book>): Set<CartItem> {
         val items =  HashSet<CartItem>()
-        books.forEach {book -> items.add(CartItem(book.id!!, book.price, 1L)) }
+        books.forEach { items.add(CartItem(it.id!!, it.price, 1L)) }
         return items;
     }
 }

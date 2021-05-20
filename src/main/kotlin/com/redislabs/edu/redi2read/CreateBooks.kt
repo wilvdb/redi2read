@@ -35,17 +35,17 @@ class CreateBooks(
                     .filter { it.toString().endsWith(".json") }
                     .map(java.nio.file.Path::toFile) //
                     .collect(Collectors.toList())
-            val categories = HashMap<String, Category>();
+            val categories = HashMap<String, Category>()
             files.forEach {
                 try {
-                    logger.info(">>>> Processing Book File: " + it.path)
+                    logger.info(">>>> Processing Book File: ${it.path}")
                     val categoryName = it.name.substring(0, it.name.lastIndexOf("_"))
                     logger.info(">>>> Category: $categoryName")
-                    var category: Category
+                    val category: Category
                     if (!categories.containsKey(categoryName)) {
                         category = Category(null, categoryName)
                         categoryRepository.save(category)
-                        categories.put(categoryName, category)
+                        categories[categoryName] = category
                     } else {
                         category = categories[categoryName]!!
                     }
