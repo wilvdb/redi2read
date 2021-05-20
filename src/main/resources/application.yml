@@ -10,3 +10,5 @@ app:
   numberOfRatings: 5000
   ratingStars: 5
   numberOfCarts: 2500
+  booksSearchIndexName: books-idx
+  autoCompleteKey: author-autocomplete

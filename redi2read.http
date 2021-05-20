@@ -13,3 +13,13 @@ Content-Type: application/json
 
 ###
 
+# curl --location --request GET 'http://localhost:8080/api/books/search/?q=%25scal%25'
+GET http://localhost:8080/api/books/search/?q=%25scal%25
+
+###
+
+# curl --location --request GET 'http://localhost:8080/api/books/authors/?q=brian%20s'
+GET http://localhost:8080/api/books/authors/?q=brian%20w
+
+###
+

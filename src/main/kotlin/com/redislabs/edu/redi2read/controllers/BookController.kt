@@ -3,7 +3,12 @@ package com.redislabs.edu.redi2read.controllers
 import com.redislabs.edu.redi2read.models.Book
 import com.redislabs.edu.redi2read.repositories.BookRepository
 import com.redislabs.edu.redi2read.repositories.CategoryRepository
+import com.redislabs.lettusearch.SearchResults
+import com.redislabs.lettusearch.StatefulRediSearchConnection
+import com.redislabs.lettusearch.Suggestion
+import com.redislabs.lettusearch.SuggetOptions
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpHeaders
@@ -25,6 +30,9 @@ import java.util.Collections
 class BookController(
     @Autowired val bookRepository: BookRepository,
     @Autowired val categoryRepository: CategoryRepository,
+    @Value("\${app.booksSearchIndexName}") val searchIndexName: String,
+    @Autowired val searchConnection: StatefulRediSearchConnection<String, String>,
+    @Value("\${app.autoCompleteKey}") val autoCompleteKey: String,
 ) {
 
     @GetMapping
@@ -46,5 +54,18 @@ class BookController(
 
     @GetMapping("/{isbn}")
     fun get(@PathVariable("isbn") isbn: String) = bookRepository.findById(isbn).get()
+
+    @GetMapping("/search")
+    fun search(@RequestParam(name="q") query: String): SearchResults<String, String> {
+        val commands = searchConnection.sync()
+        return commands.search(searchIndexName, query)
+    }
+
+    @GetMapping("/authors")
+    fun authorAutoComplete(@RequestParam(name="q") query: String): List<Suggestion<String>> {
+        val commands = searchConnection.sync()
+        val options = SuggetOptions.builder().max(20L).build();
+        return commands.sugget(autoCompleteKey, query, options);
+    }
 
 }
