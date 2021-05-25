@@ -12,7 +12,6 @@ import org.springframework.core.annotation.Order
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
 import java.util.*
-import java.util.stream.IntStream
 import kotlin.reflect.jvm.jvmName
 
 @Component
@@ -29,7 +28,7 @@ class CreateBookRatings(
     override fun run(vararg args: String?) {
         if (bookRatingRepo.count() == 0L) {
             val random = Random()
-            IntStream.range(0, numberOfRatings).forEach {
+            (0..numberOfRatings).forEach { _ ->
                 val bookId = redisTemplate.opsForSet().randomMember(Book::class.jvmName)
                 val userId = redisTemplate.opsForSet().randomMember(User::class.jvmName)
                 val stars = random.nextInt(ratingStars) + 1
@@ -37,10 +36,11 @@ class CreateBookRatings(
                 user.id = userId
                 val book = Book()
                 book.id = bookId
-                val rating = BookRating()
-                rating.user = user
-                rating.book = book
-                rating.rating = stars
+                val rating = BookRating().apply {
+                    this.user = user
+                    this.book = book
+                    this.rating = stars
+                }
                 bookRatingRepo.save(rating)
             }
             logger.info(">>>> BookRating created...")

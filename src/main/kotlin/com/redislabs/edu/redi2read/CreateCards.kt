@@ -59,7 +59,7 @@ class CreateCards(
         val random = Random()
         val howMany = random.nextInt(max) + 1
         val books = HashSet<Book>()
-        IntStream.range(1, howMany).forEach {
+        (1..howMany).forEach { _ ->
             val randomBookId = redisTemplate.opsForSet().randomMember(Book::class.jvmName)
             books.add(bookRepository.findById(randomBookId).get())
         }

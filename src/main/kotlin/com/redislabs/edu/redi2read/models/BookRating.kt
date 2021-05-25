@@ -6,7 +6,7 @@ import org.springframework.data.redis.core.RedisHash
 import javax.validation.constraints.NotNull
 
 @RedisHash
-class BookRating(
+data class BookRating(
     @Id
     var id: String?,
 

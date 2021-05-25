@@ -1,6 +1,6 @@
 package com.redislabs.edu.redi2read.models
 
-class Cart(
+data class Cart(
     var id: String?,
     var userId: String,
     var cartItems: Set<CartItem>,

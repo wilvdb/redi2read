@@ -12,7 +12,7 @@ import javax.validation.constraints.Size
 
 @JsonIgnoreProperties(value = ["password", "passwordConfirm"], allowSetters = true)
 @RedisHash
-class User(
+data class User(
     @Id
     var id: String?,
 

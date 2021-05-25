@@ -12,7 +12,6 @@ import com.redislabs.modules.rejson.Path
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.util.*
-import java.util.stream.LongStream
 
 @Service
 class CartService(
@@ -41,12 +40,8 @@ class CartService(
             val cart: Cart = cartFinder.get()
             val cartKey: String = CartRepository.getKey(cart.id)
             val cartItems: List<CartItem> = ArrayList(cart.cartItems)
-            val cartItemIndex = LongStream.range(0, cartItems.size.toLong())
-                .filter { cartItems[it.toInt()].isbn == isbn }
-                .findFirst()
-            if (cartItemIndex.isPresent) {
-                redisJson.arrPop(cartKey, CartItem::class.java, cartItemsPath, cartItemIndex.asLong)
-            }
+            val cartItemIndex = (0..cartItems.size.toLong()).firstOrNull { cartItems[it.toInt()].isbn == isbn }
+            cartItemIndex?.let { redisJson.arrPop(cartKey, CartItem::class.java, cartItemsPath, cartItemIndex) }
         }
     }
 

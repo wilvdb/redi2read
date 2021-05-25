@@ -4,7 +4,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.redis.core.RedisHash
 
 @RedisHash
-class Category(
+data class Category(
     @Id
     var id:String?,
     var name: String?,
