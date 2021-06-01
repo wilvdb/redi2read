@@ -12,3 +12,4 @@ app:
   numberOfCarts: 2500
   booksSearchIndexName: books-idx
   autoCompleteKey: author-autocomplete
+  graphId: redi2read-grf

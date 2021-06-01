@@ -22,4 +22,12 @@ GET http://localhost:8080/api/books/search/?q=%25scal%25
 GET http://localhost:8080/api/books/authors/?q=brian%20w
 
 ###
+# curl --location --request GET 'http://localhost:8080/api/recommendations/user/55214615117483454'
+GET http://localhost:8080/api/recommendations/user/55214615117483454
+
+###
+# curl --location --request GET 'http://localhost:8080/api/recommendations/isbn/1789610222/pairings'
+GET http://localhost:8080/api/recommendations/isbn/1789610222/pairings
+
+###
 
