@@ -1492,12 +1492,12 @@ set
 12) "$2a$10$/UHTESWIqcl6HZmGpWSUHexNymIgM7rzOsWc4tcgqh6W5OVO4O46."
 ```
 
-We now have a Redis Set holding the collection of user keys for the Redis Hashes containing user instances. We use the SCARD command to get the set’s cardinality (1001, the 1000 users from the JSON plus the admin user).
+We now have a Redis Set holding the collection of user keys for the Redis Hashes containing user instances. We use the ```SCARD``` command to get the set’s cardinality (1001, the 1000 users from the JSON plus the admin user).
 
-Using the SRANDMEMBER command, we can pull a random member from a Set. We then use that and the User Hashes prefix to retrieve the data for a random User hash.
+Using the ```SRANDMEMBER``` command, we can pull a random member from a Set. We then use that and the User Hashes prefix to retrieve the data for a random User hash.
 
 A few things to point out:
-- The user’s set of roles are stored using indexed hash fields (roles.[0], roles.[1], etc.) with a value being the key for a given role. This is the result of annotating the Java Set of Role using @Reference
+- The user’s set of roles are stored using indexed hash fields (roles.[0], roles.[1], etc.) with a value being the key for a given role. This is the result of annotating the Java Set of Role using ```@Reference```
 - The password field is hashed correctly.
 
 ## Building the Redi2Read API
@@ -1534,7 +1534,7 @@ return userRepository.findAll();
 We can now issue a GET request to retrieve all users:
 
 ```shell
-$ curl --location --request GET 'http://localhost:8080/api/users/'
+$ curl --location --request GET 'http://localhost:8080/api/users/'
 ```
 
 The output should be an array of JSON object like:
@@ -1557,7 +1557,7 @@ The output should be an array of JSON object like:
 ]
 ```
 
-Let’s be good RESTful citizens and filter out the password and passwordConfirm fields on the way out. To accomplish this we take advantage of the fact the Jackson is the default serializer in Spring Web which mean we can annotate the User class with the @JsonIgnoreProperties only allowing setters (so that we can load the data) but hiding the getters during serialization as shown next:
+Let’s be good RESTful citizens and filter out the ```password``` and ```passwordConfirm``` fields on the way out. To accomplish this we take advantage of the fact the Jackson is the default serializer in Spring Web which mean we can annotate the User class with the ```@JsonIgnoreProperties``` only allowing setters (so that we can load the data) but hiding the getters during serialization as shown next:
 
 ```java
 @JsonIgnoreProperties(value = { "password", "passwordConfirm" }, allowSetters = true)
@@ -1613,7 +1613,7 @@ return user.isPresent() ? List.of(user.get()) : Collections.emptyList();
 }
 ```
 
-We use a request parameter for the email, and if it is present, we invoke the findFirstByEmail finder. We wrap the result in a list to match the result type of the method. We use Optional to handle a null result from the finder.
+We use a request parameter for the email, and if it is present, we invoke the ```findFirstByEmail``` finder. We wrap the result in a list to match the result type of the method. We use Optional to handle a null result from the finder.
 
 And don’t forget your imports:
 
