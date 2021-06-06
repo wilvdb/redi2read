@@ -9,6 +9,7 @@ import com.redislabs.lettusearch.Suggestion
 import com.redislabs.lettusearch.SuggetOptions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -48,6 +49,7 @@ class BookController(
     fun get(@PathVariable("isbn") isbn: String) = bookRepository.findById(isbn).get()
 
     @GetMapping("/search")
+    @Cacheable("book-search")
     fun search(@RequestParam(name="q") query: String): SearchResults<String, String> {
         val commands = searchConnection.sync()
         return commands.search(searchIndexName, query)

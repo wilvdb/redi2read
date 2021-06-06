@@ -30,4 +30,4 @@ GET http://localhost:8080/api/recommendations/user/55214615117483454
 GET http://localhost:8080/api/recommendations/isbn/1789610222/pairings
 
 ###
-
+GET http://localhost:8080/api/books/search?q=java
