@@ -21,7 +21,7 @@ class CartService(
 ) {
 
     private val redisJson = JReJSON()
-    val cartItemsPath: Path = Path.of(".cartItems")
+    private val cartItemsPath: Path = Path.of(".cartItems")
 
     fun get(id: String) = cartRepository.findById(id).get()
 

@@ -14,6 +14,7 @@ import java.time.Duration
 @SpringBootApplication
 @EnableCaching
 class Redi2readApplication {
+
     @Bean
     fun redisTemplate(connectionFactory: RedisConnectionFactory): RedisTemplate<Any, Any> {
         val template = RedisTemplate<Any, Any>()

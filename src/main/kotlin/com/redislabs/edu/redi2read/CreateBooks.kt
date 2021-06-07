@@ -25,7 +25,9 @@ class CreateBooks(
     @Autowired val categoryRepository: CategoryRepository,
 ): CommandLineRunner {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    companion object {
+        private val logger = LoggerFactory.getLogger(CreateBooks::class.java)
+    }
 
     override fun run(vararg args: String?) {
         if (bookRepository.count() == 0L) {

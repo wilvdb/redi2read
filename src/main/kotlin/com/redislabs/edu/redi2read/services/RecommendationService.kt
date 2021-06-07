@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service
 class RecommendationService(
     @Value("\${app.graphId}") val graphId: String,
 ) {
-    val graph = RedisGraph()
+    private val graph = RedisGraph()
 
     fun getBookRecommendationsFromCommonPurchasesForUser(userId: String): Set<String> {
         val recommendations = HashSet<String>()
