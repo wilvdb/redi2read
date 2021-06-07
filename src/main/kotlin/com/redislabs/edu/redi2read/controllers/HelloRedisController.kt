@@ -14,7 +14,9 @@ class HelloRedisController(
     @Autowired val template: RedisTemplate<String, String>
     ) {
 
-    private val STRING_KEY_PREFIX = "redi2read:strings:"
+    companion object {
+        private const val STRING_KEY_PREFIX = "redi2read:strings:"
+    }
 
     @PostMapping("/strings")
     @ResponseStatus(HttpStatus.CREATED)
