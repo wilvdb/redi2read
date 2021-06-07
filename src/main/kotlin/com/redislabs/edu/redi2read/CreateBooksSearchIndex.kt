@@ -20,7 +20,9 @@ class CreateBooksSearchIndex(
     @Value("\${app.booksSearchIndexName}") val searchIndexName: String,
 ): CommandLineRunner {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    companion object {
+        private val logger = LoggerFactory.getLogger(CreateBooksSearchIndex::class.java)
+    }
 
     override fun run(vararg args: String?) {
         val commands = searchConnection.sync()

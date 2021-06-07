@@ -30,7 +30,7 @@ class CreateCards(
 ) : CommandLineRunner {
 
     companion object {
-        private val logger = LoggerFactory.getLogger(javaClass)
+        private val logger = LoggerFactory.getLogger(CreateCards::class.java)
     }
 
     override fun run(vararg args: String?) {

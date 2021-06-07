@@ -14,7 +14,9 @@ class CreateRoles(
     @Autowired val roleRepository: RoleRepository
     ): CommandLineRunner {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    companion object {
+        private val logger = LoggerFactory.getLogger(CreateRoles::class.java)
+    }
 
     override fun run(vararg args: String?) {
         if (roleRepository.count() == 0L) {

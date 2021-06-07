@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component
 import java.io.FileInputStream
 import java.io.IOException
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.stream.Collectors
 
@@ -33,7 +34,7 @@ class CreateBooks(
                 Files.list(Paths.get(javaClass.getResource("/data/books").toURI())) //
                     .filter(Files::isRegularFile) //
                     .filter { it.toString().endsWith(".json") }
-                    .map(java.nio.file.Path::toFile) //
+                    .map(Path::toFile) //
                     .collect(Collectors.toList())
             val categories = HashMap<String, Category>()
             files.forEach {

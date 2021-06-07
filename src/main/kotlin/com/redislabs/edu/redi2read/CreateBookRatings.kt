@@ -23,7 +23,9 @@ class CreateBookRatings(
     @Autowired val bookRatingRepo: BookRatingRepository,
 ): CommandLineRunner {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    companion object {
+        private val logger = LoggerFactory.getLogger(CreateBookRatings::class.java)
+    }
 
     override fun run(vararg args: String?) {
         if (bookRatingRepo.count() == 0L) {

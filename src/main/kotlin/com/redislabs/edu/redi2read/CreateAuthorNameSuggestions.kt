@@ -20,7 +20,9 @@ class CreateAuthorNameSuggestions(
     @Value("\${app.autoCompleteKey}") val autoCompleteKey: String,
 ): CommandLineRunner {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    companion object {
+        private val logger = LoggerFactory.getLogger(CreateAuthorNameSuggestions::class.java)
+    }
 
     override fun run(vararg args: String?) {
         if (!redisTemplate.hasKey(autoCompleteKey)) {

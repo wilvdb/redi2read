@@ -21,7 +21,9 @@ class CreateUsers(
     @Autowired val passwordEncoder: BCryptPasswordEncoder,
 ): CommandLineRunner {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    companion object {
+        private val logger = LoggerFactory.getLogger(CreateUsers::class.java)
+    }
 
     override fun run(vararg args: String?) {
         if (userRepository.count() == 0L) {
