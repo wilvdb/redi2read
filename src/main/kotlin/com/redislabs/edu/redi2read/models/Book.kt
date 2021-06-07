@@ -10,7 +10,7 @@ import org.springframework.data.redis.core.RedisHash
 @JsonIdentityInfo(
     generator = ObjectIdGenerators.PropertyGenerator::class,
             property = "id")
-data class Book(
+class Book(
     @Id
     var id: String?,
     var title: String?,

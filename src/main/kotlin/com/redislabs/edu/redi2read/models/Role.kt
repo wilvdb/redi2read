@@ -10,5 +10,5 @@ import org.springframework.data.redis.core.index.Indexed
 @JsonIdentityInfo(
     generator = ObjectIdGenerators.PropertyGenerator::class,
     property = "id")
-data class Role(@Id var id: String?, @Indexed var name: String?) {
+class Role(@Id var id: String?, @Indexed var name: String?) {
 }
