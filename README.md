@@ -1906,175 +1906,94 @@ We'll create a category using the characters in the filename up to the last unde
 
 Add the file src/main/java/com/redislabs/edu/redi2read/boot/CreateBooks.java with the following contents:
 
-
+```java
 package com.redislabs.edu.redi2read.boot;
 
-
-
 import java.io.File;
-
 import java.io.FileInputStream;
-
 import java.io.IOException;
-
 import java.io.InputStream;
-
 import java.nio.file.Files;
-
 import java.nio.file.Paths;
-
 import java.util.HashMap;
-
 import java.util.List;
-
 import java.util.Map;
-
 import java.util.stream.Collectors;
 
-
-
 import com.fasterxml.jackson.core.type.TypeReference;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.redislabs.edu.redi2read.models.Book;
-
 import com.redislabs.edu.redi2read.models.Category;
-
 import com.redislabs.edu.redi2read.repositories.BookRepository;
-
 import com.redislabs.edu.redi2read.repositories.CategoryRepository;
 
-
-
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.boot.CommandLineRunner;
-
 import org.springframework.core.annotation.Order;
-
 import org.springframework.stereotype.Component;
-
-
 
 import lombok.extern.slf4j.Slf4j;
 
-
-
 @Component
-
 @Order(3)
-
 @Slf4j
-
 public class CreateBooks implements CommandLineRunner {
 
 @Autowired
-
 private BookRepository bookRepository;
 
-
-
 @Autowired
-
 private CategoryRepository categoryRepository;
 
-
-
 @Override
-
 public void run(String... args) throws Exception {
-
 if (bookRepository.count() == 0) {
-
 ObjectMapper mapper = new ObjectMapper();
-
 TypeReference<List<Book>> typeReference = new TypeReference<List<Book>>() {
-
 };
 
-
-
 List<File> files = //
-
 Files.list(Paths.get(getClass().getResource("/data/books").toURI())) //
-
 .filter(Files::isRegularFile) //
-
 .filter(path -> path.toString().endsWith(".json")) //
-
 .map(java.nio.file.Path::toFile) //
-
 .collect(Collectors.toList());
-
-
 
 Map<String, Category> categories = new HashMap<String, Category>();
 
-
-
 files.forEach(file -> {
-
 try {
-
 log.info(">>>> Processing Book File: " + file.getPath());
-
 String categoryName = file.getName().substring(0, file.getName().lastIndexOf("_"));
-
 log.info(">>>> Category: " + categoryName);
 
-
-
 Category category;
-
 if (!categories.containsKey(categoryName)) {
-
 category = Category.builder().name(categoryName).build();
-
 categoryRepository.save(category);
-
 categories.put(categoryName, category);
-
 } else {
-
 category = categories.get(categoryName);
-
 }
-
-
 
 InputStream inputStream = new FileInputStream(file);
-
 List<Book> books = mapper.readValue(inputStream, typeReference);
-
 books.stream().forEach((book) -> {
-
 book.addCategory(category);
-
 bookRepository.save(book);
-
 });
-
 log.info(">>>> " + books.size() + " Books Saved!");
-
 } catch (IOException e) {
-
 log.info("Unable to import books: " + e.getMessage());
-
 }
-
 });
-
-
 
 log.info(">>>> Loaded Book Data and Created books...");
-
 }
-
 }
-
 }
-
+```
 
 
 
@@ -2085,7 +2004,7 @@ There's a lot to unpack here, so let’s take it from the top:
 - We create a Map of Strings to Category objects to collect the categories as we process the files and quickly determine whether we have already created a category.
 - For each book, we assign the category and save it to Redis.
 
-Book Controller
+### Book Controller
 
 
 Now we can implement the initial version of the BookController: our Bookstore Catalog API. This first version of the BookController will have three endpoints:
@@ -2094,93 +2013,59 @@ Now we can implement the initial version of the BookController: our Bookstore Ca
 - Get all categories
 
 Add the file src/main/java/com/redislabs/edu/redi2read/controllers/BookController.java with the following contents:
-
+```java
 package com.redislabs.edu.redi2read.controllers;
 
-
-
 import com.redislabs.edu.redi2read.models.Book;
-
 import com.redislabs.edu.redi2read.models.Category;
-
 import com.redislabs.edu.redi2read.repositories.BookRepository;
-
 import com.redislabs.edu.redi2read.repositories.CategoryRepository;
 
-
-
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.web.bind.annotation.GetMapping;
-
 import org.springframework.web.bind.annotation.PathVariable;
-
 import org.springframework.web.bind.annotation.RequestMapping;
-
 import org.springframework.web.bind.annotation.RestController;
 
-
-
 @RestController
-
 @RequestMapping("/api/books")
-
 public class BookController {
 
 @Autowired
-
 private BookRepository bookRepository;
 
-
-
 @Autowired
-
 private CategoryRepository categoryRepository;
 
-
-
 @GetMapping
-
 public Iterable<Book> all() {
-
 return bookRepository.findAll();
-
 }
-
-
 
 @GetMapping("/categories")
-
 public Iterable<Category> getCategories() {
-
 return categoryRepository.findAll();
-
 }
-
-
 
 @GetMapping("/{isbn}")
-
 public Book get(@PathVariable("isbn") String isbn) {
-
 return bookRepository.findById(isbn).get();
-
 }
 
 }
+```
 
 
-
-Get all Books
+### Get all Books
 
 
 To get all books, we issue a GET request to 'http://localhost:8080/api/books/'. This endpoint is implemented in the all method, which calls the BookRepository findAll method. Using curl:
-
+```shell
 curl --location --request GET 'http://localhost:8080/api/books/'~
-
+```
 
 The result is an array of JSON objects containing the books:
-
+```json
 [
 
 {
@@ -2230,20 +2115,20 @@ The result is an array of JSON objects containing the books:
 ...
 
 ]
+```
 
 
-
-Get a book by ISBN
+### Get a book by ISBN
 
 
 To get a specific book, we issue a GET request to 'http://localhost:8080/api/books/{isbn}'. This endpoint is implemented in the get method, which calls the BookRepository findById method. Using curl:
-
+```shell
 curl --location --request GET 'http://localhost:8080/api/books/1680503545'
-
+```
 
 The result is a JSON object containing the book:
 
-
+```json
 {
 
 "id": "1680503545",
@@ -2285,20 +2170,20 @@ The result is a JSON object containing the book:
 ]
 
 }
+```
 
 
-
-Get all Categories
+### Get all Categories
 
 
 To get all categories, we issue a GET request to 'http://localhost:8080/api/books/categories'. It’s implemented in the getCategories method, which calls the CategoriesRepository findAll method. Using curl:
-
+```
 curl --location --request GET 'http://localhost:8080/api/books/categories'
-
+```
 
 The result is an array of JSON objects containing the categories:
 
-
+```json
 [
 
 {
@@ -2430,193 +2315,116 @@ The result is an array of JSON objects containing the categories:
 }
 
 ]
+```
 
 
-
-Generate Book Ratings
+### Generate Book Ratings
 
 
 Next, we will create a random set of book ratings. Later in the course, we’ll use these for an example. Following the same recipe we used to seed Redis with a CommandLineRunner, add the file src/main/java/com/redislabs/edu/redi2read/boot/CreateBookRatings.java with the following contents:
-
+```java
 package com.redislabs.edu.redi2read.boot;
 
-
-
 import java.util.Random;
-
 import java.util.stream.IntStream;
 
-
-
 import com.redislabs.edu.redi2read.models.Book;
-
 import com.redislabs.edu.redi2read.models.BookRating;
-
 import com.redislabs.edu.redi2read.models.User;
-
 import com.redislabs.edu.redi2read.repositories.BookRatingRepository;
 
-
-
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.beans.factory.annotation.Value;
-
 import org.springframework.boot.CommandLineRunner;
-
 import org.springframework.core.annotation.Order;
-
 import org.springframework.data.redis.core.RedisTemplate;
-
 import org.springframework.stereotype.Component;
-
-
 
 import lombok.extern.slf4j.Slf4j;
 
-
-
 @Component
-
 @Order(4)
-
 @Slf4j
-
 public class CreateBookRatings implements CommandLineRunner {
 
-
-
 @Value("${app.numberOfRatings}")
-
 private Integer numberOfRatings;
 
-
-
 @Value("${app.ratingStars}")
-
 private Integer ratingStars;
 
-
-
 @Autowired
-
 private RedisTemplate<String, String> redisTemplate;
 
-
-
 @Autowired
-
 private BookRatingRepository bookRatingRepo;
 
-
-
 @Override
-
 public void run(String... args) throws Exception {
-
 if (bookRatingRepo.count() == 0) {
-
 Random random = new Random();
-
 IntStream.range(0, numberOfRatings).forEach(n -> {
-
 String bookId = redisTemplate.opsForSet().randomMember(Book.class.getName());
-
 String userId = redisTemplate.opsForSet().randomMember(User.class.getName());
-
 int stars = random.nextInt(ratingStars) + 1;
 
-
-
 User user = new User();
-
 user.setId(userId);
 
-
-
 Book book = new Book();
-
 book.setId(bookId);
 
-
-
 BookRating rating = BookRating.builder() //
-
 .user(user) //
-
 .book(book) //
-
 .rating(stars).build();
-
 bookRatingRepo.save(rating);
-
 });
 
-
-
 log.info(">>>> BookRating created...");
-
 }
-
 }
-
 }
-
+```
 
 This CommandLineRunner creates a configurable number of random ratings for a random set of books and users. We use RedisTemplate.opsForSet().randomMember() to request a random ID from the set of users and books. Then we choose a random integer between 1 and the total number of stars in our rating system to create the rating.
 
 This class introduces the use of the @Value annotation, which will grab the property inside the String param “${foo}” from the application’s property file.
 
 In the file src/main/resources/application.properties add the following values:
-
+```
 app.numberOfRatings=5000
-
 app.ratingStars=5
+```
 
 
-
-Implementing Pagination with All Books
+### Implementing Pagination with All Books
 
 
 Pagination is helpful when we have a large dataset and want to present it to the user in smaller chunks. As we learned earlier in the lesson, the BookRepository extends the PagingAndSortingRepository, which is built on top of the CrudRepository.
 
 In this section, we will refactor the BookController all method to work with the pagination features of the PagingAndSortingRepository. Replace the previously created all method with the following contents:
 
-
+```java
 @GetMapping
-
 public ResponseEntity<Map<String, Object>> all( //
-
 @RequestParam(defaultValue = "0") Integer page, //
-
 @RequestParam(defaultValue = "10") Integer size //
-
 ) {
-
 Pageable paging = PageRequest.of(page, size);
-
 Page<Book> pagedResult = bookRepository.findAll(paging);
-
 List<Book> books = pagedResult.hasContent() ? pagedResult.getContent() : Collections.emptyList();
 
-
-
 Map<String, Object> response = new HashMap<>();
-
 response.put("books", books);
-
 response.put("page", pagedResult.getNumber());
-
 response.put("pages", pagedResult.getTotalPages());
-
 response.put("total", pagedResult.getTotalElements());
-
-
 
 return new ResponseEntity<>(response, new HttpHeaders(), HttpStatus.OK);
 
 }
-
+```
 
 Let’s break down the refactoring:
 - We want to control the method return value so we’ll use a ResponseEntity, which is an extension of HttpEntity and gives us control over the HTTP status code, headers, and body.
@@ -2728,11 +2536,6 @@ Passing a page size of 25 and requesting page number 2, we get the following:
  
 
 # Domain Models with RedisJSON
-
-Brian Sam-Bodden (bsb@redislabs.com)
-
-Andrew Brookins (andrew.brookins@redislabs.com)
-
 
 
 ## OBJECTIVES
