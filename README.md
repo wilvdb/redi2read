@@ -2759,17 +2759,17 @@ We will implement the Cart and CartItem models backed by a custom Spring Reposit
 
 We will represent a user’s cart as a JSON document containing cart item subdocuments. As you can see in the class diagram, a Cart has zero or more CartItems, and it belongs to a User.
 
-REDIS JSON
+## REDIS JSON
 
 
 RedisJSON is a Redis module that lets you store, update, and fetch JSON values natively in Redis. JSON can be a better fit for modeling complex data in Redis than Hashes because, unlike Hashes, JSON values can contain nested arrays and objects.
 
-JRedisJSON
+### JRedisJSON
 
 
 JRedisJSON (https://github.com/RedisJSON/JRedisJSON) is a Java client that provides access to RedisJSON's Redis API and provides Java serialization using Google’s GSON library.
 
-Adding JRedisJSON as a Dependency
+#### Adding JRedisJSON as a Dependency
 
 
 We will use a SNAPSHOT version of JRedisJSON to take advantage of more advanced JSON manipulation features recently introduced.
@@ -2795,30 +2795,22 @@ And then the JRedisJSON dependency to the dependencies block:
 
 
 
-
 ### The Models
 
-The CartItem Model
+#### The CartItem Model
 
 
 We’ll start with the CartItem model. It holds information about a Book in the Cart; it stores the Book ISBN (id), price, and quantity added to the cart.
 
 Add the file src/main/java/com/redislabs/edu/redi2read/models/CartItem.java with the following contents:
-
+```java
 package com.redislabs.edu.redi2read.models;
 
-
-
 import lombok.Builder;
-
 import lombok.Data;
 
-
-
 @Data
-
 @Builder
-
 public class CartItem {
 
 private String isbn;
@@ -2828,50 +2820,35 @@ private Double price;
 private Long quantity;
 
 }
+```
 
 
-
-The Cart Model
+#### The Cart Model
 
 
 The Cart model contains the ID of the owning User and a set of CartItems. Utility methods exist to return the total number of items in the cart and the total cost.
 
 Add the file src/main/java/com/redislabs/edu/redi2read/models/Cart.java with the following contents:
 
-
+```java
 package com.redislabs.edu.redi2read.models;
-
-
 
 import java.util.Set;
 
-
-
 import lombok.Builder;
-
 import lombok.Data;
-
 import lombok.Singular;
 
-
-
 @Data
-
 @Builder
-
 public class Cart {
 
 private String id;
 
 private String userId;
 
-
-
 @Singular
-
 private Set<CartItem> cartItems;
-
-
 
 public Integer count() {
 
@@ -2894,62 +2871,41 @@ return cartItems //
 }
 
 }
+```
 
-
-Purchased Books
+#### Purchased Books
 
 
 After a user checks out, we need to keep track of the books the user now owns. To keep it simple, we will add a Set<Book> to the User model annotated with the @Reference annotation. We’ll also include a utility method that adds books to the user’s collection of books owned.
 
 Make the changes below to the User model:
 
-
+```java
 // ...
 
 @RedisHash
-
 public class User {
-
-
 
 //...
 
-
-
 @Reference
-
 @JsonIdentityReference(alwaysAsId = true)
-
 private Set<Role> roles = new HashSet<Role>();
 
-
-
 public void addRole(Role role) {
-
 roles.add(role);
-
 }
-
-
 
 @Reference
-
 @JsonIdentityReference(alwaysAsId = true)
-
 private Set<Book> books = new HashSet<Book>();
 
-
-
 public void addBook(Book book) {
-
 books.add(book);
-
 }
 
-
-
 }
-
+```
 
 The @Reference annotation works for our Sets in the context of Redis serialization, but you might have noticed that the roles were being fully serialized into the resulting JSON payload by Jackson.
 
@@ -2957,51 +2913,37 @@ We will add the @JsonIdentityReference with the alwaysAsId parameter set to true
 
 The @JsonIdentityInfo annotation allows us to set a generator (ObjectIdGenerator.PropertyGenerator) using the id property to direct how the serialization will happen in the presence of the @@JsonIdentityReference annotation. Add the annotation to the Book model as shown:
 
-
+```java
 @Data
-
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-
 @JsonIdentityInfo(
-
 generator = ObjectIdGenerators.PropertyGenerator.class,
-
 property = "id")
-
 @RedisHash
-
 public class Book {
 
 //...
 
 }
-
+```
 
 Similarly, we’ll add the @JsonIdentityInfo to the Role model:
 
-
+```java
 @Data
-
 @Builder
-
 @JsonIdentityInfo(
-
 generator = ObjectIdGenerators.PropertyGenerator.class,
-
 property = "id")
-
 @RedisHash
-
 public class Role {
-
 //...
-
 }
-
+```
 
 Now, when JSON serialization occurs in the REST controllers, the user collection will include the roles as JSON arrays of role IDs. The user collection will also include the newly added collection of books as an array of book IDs.
 
-The Cart Repository
+### The Cart Repository
 
 
 RedisJSON is not yet seamlessly integrated with Spring, but that does not prevent us from using RedisJSON the “Spring Way”. We have provided an implementation of Spring’s CrudRepository so that we can implement our services and controllers.
@@ -3010,256 +2952,133 @@ Add the file src/main/java/com/redislabs/edu/redi2read/repositories/CartReposito
 ```java
 package com.redislabs.edu.redi2read.repositories;
 
-
-
 import java.util.List;
-
 import java.util.Optional;
-
 import java.util.UUID;
-
 import java.util.stream.Collectors;
-
 import java.util.stream.StreamSupport;
 
-
-
 import com.redislabs.edu.redi2read.models.Cart;
-
 import com.redislabs.modules.rejson.JReJSON;
 
-
-
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.data.redis.core.HashOperations;
-
 import org.springframework.data.redis.core.RedisTemplate;
-
 import org.springframework.data.redis.core.SetOperations;
-
 import org.springframework.data.repository.CrudRepository;
-
 import org.springframework.stereotype.Repository;
 
-
-
 @Repository
-
 public class CartRepository implements CrudRepository<Cart, String> {
 
-
-
 private JReJSON redisJson = new JReJSON();
-
 private final static String idPrefix = Cart.class.getName();
 
-
-
 @Autowired
-
 private RedisTemplate<String, String> template;
 
-
-
 private SetOperations<String, String> redisSets() {
-
 return template.opsForSet();
-
 }
-
-
 
 private HashOperations<String, String, String> redisHash() {
-
 return template.opsForHash();
-
 }
-
-
 
 @Override
-
 public <S extends Cart> S save(S cart) {
-
 // set cart id
-
 if (cart.getId() == null) {
-
 cart.setId(UUID.randomUUID().toString());
-
 }
-
 String key = getKey(cart);
-
 redisJson.set(key, cart);
-
 redisSets().add(idPrefix, key);
-
 redisHash().put("carts-by-user-id-idx", cart.getUserId().toString(), cart.getId().toString());
 
-
-
 return cart;
-
 }
 
-
-
 @Override
-
 public <S extends Cart> Iterable<S> saveAll(Iterable<S> carts) {
-
 return StreamSupport //
-
 .stream(carts.spliterator(), false) //
-
 .map(cart -> save(cart)) //
-
 .collect(Collectors.toList());
-
 }
 
-
-
 @Override
-
 public Optional<Cart> findById(String id) {
-
 Cart cart = redisJson.get(getKey(id), Cart.class);
-
 return Optional.ofNullable(cart);
-
 }
 
-
-
 @Override
-
 public boolean existsById(String id) {
-
 return template.hasKey(getKey(id));
-
 }
 
-
-
 @Override
-
 public Iterable<Cart> findAll() {
-
 String[] keys = redisSets().members(idPrefix).stream().toArray(String[]::new);
-
 return (Iterable<Cart>) redisJson.mget(Cart.class, keys);
-
 }
 
-
-
 @Override
-
 public Iterable<Cart> findAllById(Iterable<String> ids) {
-
 String[] keys = StreamSupport.stream(ids.spliterator(), false) //
-
 .map(id -> getKey(id)).toArray(String[]::new);
-
 return (Iterable<Cart>) redisJson.mget(Cart.class, keys);
-
 }
 
-
-
 @Override
-
 public long count() {
-
 return redisSets().size(idPrefix);
-
 }
 
-
-
 @Override
-
 public void deleteById(String id) {
-
 redisJson.del(getKey(id));
-
 }
 
-
-
 @Override
-
 public void delete(Cart cart) {
-
 deleteById(cart.getId());
-
 }
 
-
-
 @Override
-
 public void deleteAll(Iterable<? extends Cart> carts) {
-
 List<String> keys = StreamSupport //
-
 .stream(carts.spliterator(), false) //
-
 .map(cart -> idPrefix + cart.getId()) //
-
 .collect(Collectors.toList());
-
 redisSets().getOperations().delete(keys);
-
 }
-
-
 
 @Override
-
 public void deleteAll() {
-
 redisSets().getOperations().delete(redisSets().members(idPrefix));
-
 }
-
-
 
 public Optional<Cart> findByUserId(Long id) {
-
 String cartId = redisHash().get("carts-by-user-id-idx", id.toString());
-
 return (cartId != null) ? findById(cartId) : Optional.empty();
-
 }
-
-
 
 public static String getKey(Cart cart) {
-
 return String.format("%s:%s", idPrefix, cart.getId());
-
 }
-
-
 
 public static String getKey(String id) {
-
 return String.format("%s:%s", idPrefix, id);
-
 }
-
-
 
 }
 ```
 
 As with the @RedisHash annotated entities, our Carts are maintained with a collection of Redis JSON objects and a Redis Set to maintain the collection of keys.
 
-The Cart Service
+### The Cart Service
 
 
 As Spring applications get more complex, using the repositories directly on your controllers overcomplicates the controllers and diverts from the responsibility to control routing and deal with incoming parameters and outgoing JSON payloads.
@@ -3353,7 +3172,7 @@ userRepository.save(user);
 
 The service implements the addToCart and removeFromCart methods natively at the JSON level using JSONPath syntax to add and remove items from the cart. Let’s delve deeper into the implementation of these methods.
 
-Adding Items to the cart
+### Adding Items to the cart
 
 In the addToCart method:
 - We search for the cart by ID
@@ -3371,7 +3190,7 @@ redisJson.arrAppend(cartKey, cartItemsPath, item);
 }
 ```
 
-Removing Items from the cart
+### Removing Items from the cart
 
 In the removeFromCart method:
 - We search for the cart by ID.
@@ -3392,7 +3211,7 @@ redisJson.arrPop(cartKey, CartItem.class, cartItemsPath, cartItemIndex.getAsLong
 }
 ```
 
-Generating Random Carts
+### Generating Random Carts
 
 
 We now have all the pieces in place to create a CommandLineRunner that can generate random carts for our users.
@@ -3528,27 +3347,27 @@ Let’s break down the CreateCarts class:
 There are two private utility methods at the bottom of the class to get a random number of books and to create cart items from a set of books.
 
 Upon server start (after some CPU cycles) you should see:
-
+```
 2021-04-04 14:58:08.737 INFO 31459 --- [ restartedMain] c.r.edu.redi2read.boot.CreateCarts      : >>>> Created Carts...
-
+```
 
 We can now use the Redis CLI to get a random cart key from the cart set, check the type of one of the keys (ReJSON-RL) and use the JSON.GET command to retrieve the JSON payload:
-
+```
 127.0.0.1:6379> SRANDMEMBER "com.redislabs.edu.redi2read.models.Cart"
 
 "com.redislabs.edu.redi2read.models.Cart:dcd6a6c3-59d6-43b4-8750-553d159cdeb8"
 
 127.0.0.1:6379> TYPE "com.redislabs.edu.redi2read.models.Cart:dcd6a6c3-59d6-43b4-8750-553d159cdeb8"
-
-ReJSON-RL
-
+```
+### ReJSON-RL
+```
 127.0.0.1:6379> JSON.GET "com.redislabs.edu.redi2read.models.Cart:dcd6a6c3-59d6-43b4-8750-553d159cdeb8"
 
 "{\"id\":\"dcd6a6c3-59d6-43b4-8750-553d159cdeb8\",\"userId\":\"-3356969291827598172\",\"cartItems\":[{\"isbn\":\"1784391093\",\"price\":17.190000000000001,\"quantity\":1},{\"isbn\":\"3662433524\",\"price\":59.990000000000002,\"quantity\":1}]}"
+```
 
 
-
-The Cart Controller
+#### The Cart Controller
 
 
 The CartController is mostly a pass-through to the CartService (as controllers are intended to be).
@@ -3600,61 +3419,44 @@ cartService.checkout(id);
 ```
 
 Let’s use curl to request a cart by its ID:
-
+```shell
 curl --location --request GET 'http://localhost:8080/api/carts/dcd6a6c3-59d6-43b4-8750-553d159cdeb8'
-
+```
 
 
 Which should return a payload like:
+```json
 {
-
 "id": "dcd6a6c3-59d6-43b4-8750-553d159cdeb8",
-
 "userId": "-3356969291827598172",
-
 "cartItems": [
-
 {
-
 "isbn": "1784391093",
-
 "price": 17.19,
-
 "quantity": 1
-
 },
-
 {
-
 "isbn": "3662433524",
-
 "price": 59.99,
-
 "quantity": 1
-
 }
-
 ],
-
 "total": 77.18
-
 }
+```
 
-
-Search with RediSearch
-Search with RediSearch
-
+# Search with RediSearch
 
 Brian Sam-Bodden (bsb@redislabs.com)
 Andrew Brookins (andrew.brookins@redislabs.com)
 
 
-OBJECTIVES
+## OBJECTIVES
 
 
 Learn how the RediSearch module can bridge the querying gap between SQL and NoSQL systems. We’ll focus on two everyday use cases: full-text search and auto-complete.
 
-AGENDA
+## AGENDA
 
 In this lesson, you'll learn:
 
@@ -3664,9 +3466,7 @@ In this lesson, you'll learn:
   If you get stuck:
 - The progress made in this lesson is available on the redi2read github repository at https://github.com/redis-developer/redi2read/tree/course/milestone-7
 
-﻿
-
-REDISEARCH
+## REDISEARCH
 
 
 RediSearch is a source-available module for querying, secondary indexing, and full-text search in Redis.
@@ -3677,7 +3477,7 @@ This also enables more advanced features, such as multi-field queries, aggregati
 
 Having a rich query and aggregation engine in your Redis database opens the door to many new applications that go well beyond caching. You can use Redis as your primary database even when you need to access the data using complex queries without adding complexity to the code to update and index data.
 
-Using spring-redisearch
+### Using spring-redisearch
 
 
 Spring RediSearch (https://github.com/RediSearch/spring-redisearch) is a library built on LettuSearch (https://github.com/RediSearch/lettusearch), providing access to RediSearch from Spring applications.
@@ -3689,18 +3489,14 @@ Adding the spring-redisearch dependency
 In your Maven pom.xml, add the following dependency:
 ```xml
 <dependency>
-
 <groupId>com.redislabs</groupId>
-
 <artifactId>spring-redisearch</artifactId>
-
 <version>3.0.1</version>
-
 </dependency>
 ```
 
 
-Creating a Search Index
+### Creating a Search Index
 
 
 To create an index, you must define a schema to list the fields and their types to be indexed.
@@ -3713,136 +3509,78 @@ For the Book model, you will be indexing four fields:
 Creating the index is done using the FT.CREATE command. The RediSearch engine will scan the database using one or more PREFIX key pattern values and update the index based on the schema definition. This active index maintenance makes it easy to add an index to an existing application.
 
 To create our index, we’ll use the now-familiar CommandLineRunner recipe. We will keep the name of the soon to be created index in the application's property field as shown:
-
+```
 app.booksSearchIndexName=books-idx
-
+```
 
 Next, create the src/main/java/com/redislabs/edu/redi2read/boot/CreateBooksSearchIndex.java file and add the contents as follows:
 
-
+```java
 package com.redislabs.edu.redi2read.boot;
 
-
-
 import com.redislabs.edu.redi2read.models.Book;
-
 import com.redislabs.lettusearch.CreateOptions;
-
 import com.redislabs.lettusearch.Field;
-
 import com.redislabs.lettusearch.RediSearchCommands;
-
 import com.redislabs.lettusearch.StatefulRediSearchConnection;
 
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.beans.factory.annotation.Value;
-
 import org.springframework.boot.CommandLineRunner;
-
 import org.springframework.core.annotation.Order;
-
 import org.springframework.stereotype.Component;
 
 import io.lettuce.core.RedisCommandExecutionException;
 
 import lombok.extern.slf4j.Slf4j;
 
-
-
 @Component
-
 @Order(6)
-
 @Slf4j
-
 public class CreateBooksSearchIndex implements CommandLineRunner {
 
-
-
 @Autowired
-
 private StatefulRediSearchConnection<String, String> searchConnection;
 
-
-
 @Value("${app.booksSearchIndexName}")
-
 private String searchIndexName;
 
-
-
 @Override
-
 @SuppressWarnings({ "unchecked" })
-
 public void run(String... args) throws Exception {
 
 RediSearchCommands<String, String> commands = searchConnection.sync();
-
 try {
-
 commands.ftInfo(searchIndexName);
-
 } catch (RedisCommandExecutionException rcee) {
-
 if (rcee.getMessage().equals("Unknown Index name")) {
 
-
-
 CreateOptions<String, String> options = CreateOptions.<String, String>builder()//
-
 .prefix(String.format("%s:", Book.class.getName())).build();
 
-
-
 Field<String> title = Field.text("title").sortable(true).build();
-
 Field<String> subtitle = Field.text("subtitle").build();
-
 Field<String> description = Field.text("description").build();
-
 Field<String> author0 = Field.text("authors.[0]").build();
-
 Field<String> author1 = Field.text("authors.[1]").build();
-
 Field<String> author2 = Field.text("authors.[2]").build();
-
 Field<String> author3 = Field.text("authors.[3]").build();
-
 Field<String> author4 = Field.text("authors.[4]").build();
-
 Field<String> author5 = Field.text("authors.[5]").build();
-
 Field<String> author6 = Field.text("authors.[6]").build();
 
-
-
 commands.create(
-
 searchIndexName, //
-
 options, //
-
 title, subtitle, description, //
-
 author0, author1, author2, author3, author4, author5, author6 //
-
 );
-
-
-
 log.info(">>>> Created Books Search Index...");
-
 }
-
 }
-
 }
-
 }
-
-
+```
 
 
 Let’s break down what our CreateBooksSearchIndex CommandLineRunner is doing. We'll be working with classes out of the com.redislabs.lettusearch package:
@@ -3860,16 +3598,15 @@ Let’s break down what our CreateBooksSearchIndex CommandLineRunner is doing. W
 To see more options and all field types, see https://oss.redislabs.com/redisearch/Commands/#ftcreate
 
 On server restart, you should run your Redis CLI MONITOR to see the following commands:
-
+```
 1617601021.779396 [0 172.21.0.1:59396] "FT.INFO" "books-idx"
-
 1617601021.786192 [0 172.21.0.1:59396] "FT.CREATE" "books-idx" "PREFIX" "1" "com.redislabs.edu.redi2read.models.Book:" "SCHEMA" "title" "TEXT" "SORTABLE" "subtitle" "TEXT" "description" "TEXT" "authors.[0]" "TEXT" "authors.[1]" "TEXT" "authors.[2]" "TEXT" "authors.[3]" "TEXT" "authors.[4]" "TEXT" "authors.[5]" "TEXT" "authors.[6]" "TEXT"
-
+```
 
 
 You can see the index information with the following command in the Redis CLI:
 
-
+```
 127.0.0.1:6379> FT.INFO "books-idx"
 
 1) index_name
@@ -3893,110 +3630,80 @@ You can see the index information with the following command in the Redis CLI:
 15) num_records
 
 16) "413522"
-
+```
 
 
 This snippet from the FT.INFO command output for the “books-idx” index shows that there are 2,403 documents indexed (the number of books in the system). From our indexed documents, there are 32,863 terms and close to half a million records.
 
-Full-text Search Queries
+## Full-text Search Queries
 
 
 RediSearch is a full-text search engine, allowing the application to run powerful queries. For example, to search all books that contain “networking”-related information, you would run the following command:
-
+```
 127.0.0.1:6379> FT.SEARCH books-idx "networking" RETURN 1 title
-
+```
 
 Which returns:
 
-
+```
 1) (integer) 299
-
 2) "com.redislabs.edu.redi2read.models.Book:3030028496"
-
 3) 1) "title"
-
 2) "Ubiquitous Networking"
-
 4) "com.redislabs.edu.redi2read.models.Book:9811078718"
-
 5) 1) "title"
-
 2) "Progress in Computing, Analytics and Networking"
-
 6) "com.redislabs.edu.redi2read.models.Book:9811033765"
-
 7) 1) "title"
-
 2) "Progress in Intelligent Computing Techniques: Theory, Practice, and Applications"
-
 8) "com.redislabs.edu.redi2read.models.Book:981100448X"
-
 9) 1) "title"
-
 2) "Proceedings of Fifth International Conference on Soft Computing for Problem Solving"
-
 10) "com.redislabs.edu.redi2read.models.Book:1787129411"
-
 11) 1) "title"
-
 2) "OpenStack: Building a Cloud Environment"
-
 12) "com.redislabs.edu.redi2read.models.Book:3319982044"
-
 13) 1) "title"
-
 2) "Engineering Applications of Neural Networks"
-
 14) "com.redislabs.edu.redi2read.models.Book:3319390287"
-
 15) 1) "title"
-
 2) "Open Problems in Network Security"
-
 16) "com.redislabs.edu.redi2read.models.Book:0133887642"
-
 17) 1) "title"
-
 2) "Web and Network Data Science"
-
 18) "com.redislabs.edu.redi2read.models.Book:3319163132"
-
 19) 1) "title"
-
 2) "Databases in Networked Information Systems"
-
 20) "com.redislabs.edu.redi2read.models.Book:1260108422"
-
 21) 1) "title"
-
 2) "Gray Hat Hacking: The Ethical Hacker's Handbook, Fifth Edition"
+```
 
-
-As you can see, books with the work “network” in the title are returned, even though we used the word “networking”. This is because the title has been indexed as text, so the field is tokenized and stemmed.
+As you can see, books with the work “network” in the title are returned, even though we used the word “networking”. This is because the title has been indexed as text, so the field is [tokenized](https://oss.redislabs.com/redisearch/Escaping/) and [stemmed](https://oss.redislabs.com/redisearch/Stemming/).
 
 Also, the command does not specify a field, so the term “networking” (and related terms) is searched in all text fields of the index. That’s why we have titles that do not show the search term; in these cases, the term has been found in another of the indexed fields.
 
 If you want to search on specific fields, you use the @field notation, as follows:
-
+```
 127.0.0.1:6379> FT.SEARCH books-idx "@title:networking" RETURN 1 title
-
+```
 
 Try some additional full-text search queries against the index.
 
 Prefix matches:
-
+```
 127.0.0.1:6379> FT.SEARCH books-idx "clo*" RETURN 4 title subtitle authors.[0] authors.[1]
-
+```
 
 Fuzzy search:
-
+```
 127.0.0.1:6379> FT.SEARCH books-idx "%scal%" RETURN 2 title subtitle
-
+```
 
 Unions:
-
+```
 127.0.0.1:6379> FT.SEARCH books-idx "rust | %scal%" RETURN 3 title subtitle authors.[0]
-
+```
 
 You can find more information about the query syntax in the RediSearch documentation.
 
@@ -4004,115 +3711,72 @@ Adding Search to the Books Controller
 
 
 To add full-text search capabilities to the BooksController, we'll first inject a StatefulRediSearchConnection and simply pass a text query param to the search method available from the RediSearchCommands interface:
-
+```java
 @Value("${app.booksSearchIndexName}")
-
 private String searchIndexName;
 
-
-
 @Autowired
-
 private StatefulRediSearchConnection<String, String> searchConnection;
 
-
-
 @GetMapping("/search")
-
 public SearchResults<String,String> search(@RequestParam(name="q")String query) {
-
 RediSearchCommands<String, String> commands = searchConnection.sync();
-
 SearchResults<String, String> results = commands.search(searchIndexName, query);
-
 return results;
-
 }
-
+```
 
 With the imports:
-
+```
 import com.redislabs.lettusearch.RediSearchCommands;
-
 import com.redislabs.lettusearch.SearchResults;
-
 import com.redislabs.lettusearch.StatefulRediSearchConnection;
 
 import org.springframework.beans.factory.annotation.Value;
-
+```
 
 We can use curl to execute some the sample queries we previously tried:
-
+```
 curl --location --request GET 'http://localhost:8080/api/books/search/?q=%25scal%25'
-
+```
 This returns:
+```json
 [
-
 {
-
 "infoLink": "https://play.google.com/store/books/details?id=xVU2AAAAQBAJ&source=gbs_api",
-
 "thumbnail": "http://books.google.com/books/content?id=xVU2AAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-
 "_class": "com.redislabs.edu.redi2read.models.Book",
-
 "id": "1449340326",
-
 "language": "en",
-
 "title": "Scala Cookbook",
-
 "price": "43.11",
-
 "currency": "USD",
-
 "categories.[0]": "com.redislabs.edu.redi2read.models.Category:23a4992c-973d-4f36-b4b1-6678c5c87b28",
-
 "subtitle": "Recipes for Object-Oriented and Functional Programming",
-
 "authors.[0]": "Alvin Alexander",
-
 "pageCount": "722",
-
 "description": "..."
-
 },
-
 {
-
 "infoLink": "https://play.google.com/store/books/details?id=d5EIBgAAQBAJ&source=gbs_api",
-
 "thumbnail": "http://books.google.com/books/content?id=d5EIBgAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-
 "_class": "com.redislabs.edu.redi2read.models.Book",
-
 "id": "178355875X",
-
 "language": "en",
-
 "title": "Scala for Machine Learning",
-
 "price": "22.39",
-
 "currency": "USD",
-
 "categories.[0]": "com.redislabs.edu.redi2read.models.Category:15129267-bee9-486d-88e7-54de709276ef",
-
 "authors.[0]": "Patrick R. Nicolas",
-
 "pageCount": "520",
-
 "description": "..."
-
 },
-
 ...
-
 ]
+```
 
 
-
-Adding and getting Auto-complete suggestions
+## Adding and getting Auto-complete suggestions
 
 
 RediSearch provides a completion suggester that is typically used for auto-complete/search-as-you-type functionality. This is a navigational feature to guide users to relevant results as they are typing, improving search precision.
@@ -4131,113 +3795,64 @@ To create an auto-complete suggestion dictionary for author names, we’ll creat
 Unlike search indexes, which RediSearch maintains automatically, you maintain suggestion dictionaries manually using FT.SUGADD and FT.SUGDEL.
 
 Add the property for the name of the auto-complete dictionary to src/main/resources/application.properties:
-
+```
 app.autoCompleteKey=author-autocomplete
-
+```
 
 Add the file src/main/java/com/redislabs/edu/redi2read/boot/CreateAuthorNameSuggestions.java with the following contents:
 
-
+```
 package com.redislabs.edu.redi2read.boot;
 
-
-
 import com.redislabs.edu.redi2read.repositories.BookRepository;
-
 import com.redislabs.lettusearch.RediSearchCommands;
-
 import com.redislabs.lettusearch.StatefulRediSearchConnection;
-
 import com.redislabs.lettusearch.Suggestion;
 
-
-
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.beans.factory.annotation.Value;
-
 import org.springframework.boot.CommandLineRunner;
-
 import org.springframework.core.annotation.Order;
-
 import org.springframework.data.redis.core.RedisTemplate;
-
 import org.springframework.stereotype.Component;
-
-
 
 import lombok.extern.slf4j.Slf4j;
 
-
-
 @Component
-
 @Order(7)
-
 @Slf4j
-
 public class CreateAuthorNameSuggestions implements CommandLineRunner {
 
-
-
 @Autowired
-
 private RedisTemplate<String, String> redisTemplate;
 
-
-
 @Autowired
-
 private BookRepository bookRepository;
 
-
-
 @Autowired
-
 private StatefulRediSearchConnection<String, String> searchConnection;
 
-
-
 @Value("${app.autoCompleteKey}")
-
 private String autoCompleteKey;
 
-
-
 @Override
-
 public void run(String... args) throws Exception {
-
 if (!redisTemplate.hasKey(autoCompleteKey)) {
-
 RediSearchCommands<String, String> commands = searchConnection.sync();
-
 bookRepository.findAll().forEach(book -> {
-
 if (book.getAuthors() != null) {
-
 book.getAuthors().forEach(author -> {
-
 Suggestion<String> suggestion = Suggestion.builder(author).score(1d).build();
-
 commands.sugadd(autoCompleteKey, suggestion);
-
 });
-
 }
-
 });
-
-
 
 log.info(">>>> Created Author Name Suggestions...");
-
 }
-
 }
-
 }
-
+```
 
 
 
@@ -4248,104 +3863,75 @@ Let’s break down the logic of the CreateAuthorNameSuggestions CommandLineRunne
 
 To use the auto-suggestion feature in the controller, we can add a new method:
 
-
+```java
 @Value("${app.autoCompleteKey}")
-
 private String autoCompleteKey;
 
-
-
 @GetMapping("/authors")
-
 public List<Suggestion<String>> authorAutoComplete(@RequestParam(name="q")String query) {
-
 RediSearchCommands<String, String> commands = searchConnection.sync();
-
 SuggetOptions options = SuggetOptions.builder().max(20L).build();
-
 return commands.sugget(autoCompleteKey, query, options);
-
 }
-
+```
 
 With imports:
-
+```java
 import com.redislabs.lettusearch.Suggestion;
-
 import com.redislabs.lettusearch.SuggetOptions;
-
+```
 
 In the authorAutoComplete method, we use the FT.SUGGET command (via the sugget method from the RediSearchCommands object) and build a query using a SuggetOptions configuration. In the example above, we set the maximum number of results to 20.
 
 We can use curl to craft a request to our new endpoint. In this example, I’m passing “brian s” as the query:
-
+```
 curl --location --request GET 'http://localhost:8080/api/books/authors/?q=brian%20s'
-
+```
 
 This results in a response with 2 JSON objects:
+```json
 [
-
 {
-
 "string": "Brian Steele",
-
 "score": null,
-
 "payload": null
-
 },
-
 {
-
 "string": "Brian Sam-Bodden",
-
 "score": null,
-
 "payload": null
-
 }
-
 ]
-
-
-
+```
 
 If we add one more letter to our query to make it “brian sa”:
 
-
+```
 curl --location --request GET 'http://localhost:8080/api/books/authors/?q=brian%20sa'
-
+```
 
 We get the expected narrowing of the suggestion set:
-
+```json
 [
-
 {
-
 "string": "Brian Sam-Bodden",
-
 "score": null,
-
 "payload": null
-
 }
-
 ]
+```
 
-
-Recommendations with RedisGraph
-Recommendations with RedisGraph
-
+# Recommendations with RedisGraph
 
 Brian Sam-Bodden (bsb@redislabs.com)
 Andrew Brookins (andrew.brookins@redislabs.com)
 
-OBJECTIVES
+## OBJECTIVES
 
 
 Build a simple but powerful graph-based recommendation engine in the Redi2Read application.
 
-AGENDA
+## AGENDA
 
 In this lesson, students will learn:
 
@@ -4356,7 +3942,7 @@ In this lesson, students will learn:
 
 
 
-GRAPHS
+## GRAPHS
 
 
 Graph databases are composed of nodes and relationships. These databases excel at managing highly connected data.
@@ -4365,7 +3951,7 @@ Nodes represent entities (party, place, thing, category, moment-in-time) related
 
 Relationships connect nodes. They represent an association between nodes that is important to your domain.
 
-REDIS GRAPH
+## REDIS GRAPH
 
 
 Redis Graph is a low-latency graph database based on the property graph model built as a Redis module.
@@ -4384,44 +3970,44 @@ It supports a large subset of the Cypher Query Language, an open standard suppor
 
 The Cypher Query Language is a SQL-inspired pattern-matching language with an easy to grasp visual aspect due to its use of ASCII-Art to easily visual graph relationships in text. The specification is becoming an industry standard among graph database vendors (see openCypher).
 
-Nodes
+### Nodes
 
 Nodes are enclosed by parenthesis. For example:
-
+```
 ()
-
+```
 
 It is the simplest of nodes; an anonymous node (with no label or variable), as a pattern-matching entity, it will match any node in the database.
 
-
+```
 (:Actor)
-
+```
 
 Represents a node under the label “Actor”; you can think of it as the node’s class.
-
+```
 (a:Actor)
-
+```
 
 In this example, “a” is an alias for the node. Think of it as a variable that you can use in a query, just like in SQL.
-
+```
 (a:Actor {name:'Kathryn Hahn'})
-
+```
 
 The JSON-looking object in curly brackets is a node property. The properties are attached to the node upon creation. When used in a query, they serve as pattern matching.
 
 
-Relationships
+### Relationships
 
 
 Relationships are represented by arrows (--> or <--) between two nodes. The type of relationship is enclosed in squared brackets.
 
-
+```
 (a:Actor {name:'Kathryn Hahn'})-[:ACTS]->(s:Show {name:'WandaVision'})
-
+```
 
 The above snippet could be used to create the relationship if used with the GRAPH.CREATE method, for example. If the nodes did not exist, they would be created, or if they existed, it would just use the node properties to pattern match.
 
-RedisInsight: A Visual Management Tool for Redis
+### RedisInsight: A Visual Management Tool for Redis
 
 
 Until now, we have been using the Redis CLI, curl, and the output of our Java programs to interact with Redis.
@@ -4432,170 +4018,121 @@ RedisInsight also supports some popular Redis modules, and we'll use it in this 
 
 If you want to get the best possible understanding of the materials in this chapter, please download and install RedisInsight.
 
-A warm-up with Cypher
+### A warm-up with Cypher
 
 
 Try in the Redis CLI
 Ok, enough theory, let’s fire up the Redis CLI and try some graph making and querying (and later visualizing in RedisInsight).
 
 Let’s create a standalone node for an Actor:
-
+```
 127.0.0.1:6379> GRAPH.QUERY imdb-grf "CREATE (:Actor {name: 'Kathryn Hahn', nick: 'ka'})"
-
 1) 1) "Labels added: 1"
-
 2) "Nodes created: 1"
-
 3) "Properties set: 2"
-
+```
 
 And a standalone node for a TV show:
-
+```
 127.0.0.1:6379> GRAPH.QUERY imdb-grf "CREATE (:Show {name: 'WandaVision', nick: 'wv'})"
-
 1) 1) "Labels added: 1"
-
 2) "Nodes created: 1"
-
 3) "Properties set: 2"
-
+```
 
 Now let’s join them with a relationship of type `:ACTS`:
-
+```
 127.0.0.1:6379> GRAPH.QUERY imdb-grf "MATCH (a:Actor {nick: 'ka'}), (s:Show {nick: 'wv'}) CREATE (a)-[:ACTS]->(s)"
-
 1) 1) "Relationships created: 1"
-
+```
 
 The MATCH keyword indicates a pattern matching operation. You can have multiple patterns in a command separated list in a single MATCH or multiple MATCH lines. Variables are used to “join” multiple patterns.
 
 Notice that the Redis Graph Cypher command starts with:
-
+```
 GRAPH.QUERY key-of-the-graph cypher-query
-
+```
 
 First, let’s see what are the unique labels (classes) in the graph:
-
+```
 127.0.0.1:6379> GRAPH.QUERY "imdb-grf" "match (n) return distinct labels(n)"
-
 1) 1) "labels(n)"
-
 2) 1) 1) "Actor"
-
 2) 1) "Show"
-
 3) 1) "Movie"
-
+```
 
 In RedisInsight:
 
-
+![alt text](img/redisinsight.png)
 
 As expected, the unique labels are “Actor,” “Movie,” and “Show.”
 
 Now, execute the commands below, and then we can ask some questions of the data using Cypher:
 
-
+```
 GRAPH.QUERY imdb-grf "CREATE (:Actor {name: 'Paul Bettany', nick: 'pb'})"
-
 GRAPH.QUERY imdb-grf "CREATE (:Actor {name: 'Paul Rudd', nick: 'pr'})"
 
- 
-
 GRAPH.QUERY imdb-grf "CREATE (:Show {name: 'The Shrink Next Door', nick: 'tsnd'})"
-
 GRAPH.QUERY imdb-grf "CREATE (:Movie {name: 'Iron Man', nick: 'im'})"
-
 GRAPH.QUERY imdb-grf "CREATE (:Movie {name: 'Our Idiot Brother', nick: 'oib'})"
-
 GRAPH.QUERY imdb-grf "CREATE (:Movie {name: 'Captain America: Civil War', nick: 'cacw'})"
 
- 
-
 GRAPH.QUERY imdb-grf "MATCH (a:Actor {nick: 'pb'}), (s:Show {nick: 'wv'}) CREATE (a)-[:ACTS]->(s)"
-
 GRAPH.QUERY imdb-grf "MATCH (a:Actor {nick: 'pb'}), (m:Movie {nick: 'im'}) CREATE (a)-[:ACTS]->(m)"
-
 GRAPH.QUERY imdb-grf "MATCH (a:Actor {nick: 'ka'}), (m:Movie {nick: 'oib'}) CREATE (a)-[:ACTS]->(m)"
-
 GRAPH.QUERY imdb-grf "MATCH (a:Actor {nick: 'pr'}), (m:Movie {nick: 'oib'}) CREATE (a)-[:ACTS]->(m)"
-
 GRAPH.QUERY imdb-grf "MATCH (a:Actor {nick: 'pr'}), (m:Movie {nick: 'cacw'}) CREATE (a)-[:ACTS]->(m)"
-
 GRAPH.QUERY imdb-grf "MATCH (a:Actor {nick: 'pr'}), (s:Show {nick: 'tsnd'}) CREATE (a)-[:ACTS]->(s)"
-
 GRAPH.QUERY imdb-grf "MATCH (a:Actor {nick: 'ka'}), (s:Show {nick: 'tsnd'}) CREATE (a)-[:ACTS]->(s)"
+```
 
+### What are the relationships in our graph?
 
-
-
-What are the relationships in our graph?
-
-
+```
 127.0.0.1:6379> GRAPH.QUERY "imdb-grf" "MATCH ()-[e]->() RETURN distinct type(e)"
-
 1) 1) "type(e)"
-
 2) 1) 1) "ACTS"~
-
+```
 
 Count the labels in the graph:
-
+```
 127.0.0.1:6379> GRAPH.QUERY "imdb-grf" "MATCH (n) RETURN distinct labels(n), count(n)"
-
 1) 1) "labels(n)"
-
 2) "count(n)"
-
 2) 1) 1) "Actor"
-
 2) (integer) 3
-
 2) 1) "Movie"
-
 2) (integer) 3
-
 3) 1) "Show"
-
 2) (integer) 2
-
+```
 
 Return the name of all actors that acted in ‘The Shrink Next Door’:
-
+```
 127.0.0.1:6379> GRAPH.QUERY imdb-grf "MATCH (a:Actor)-[:ACTS]->(:Show {name:'The Shrink Next Door'}) RETURN a.name"
-
 1) 1) "a.name"
-
 2) 1) 1) "Kathryn Hahn"
-
 2) 1) "Paul Rudd"
-
+```
 
 Find any two actors that worked together in a movie:
-
+```
 127.0.0.1:6379> GRAPH.QUERY "imdb-grf" "MATCH                 (a1:Actor)-[:ACTS]->(m:Movie)<-[:ACTS]-(a2:Actor)
-
 WHERE a1 <> a2 AND id(a1) > id(a2)
-
 RETURN m.name, a1.name, a2.name"
-
 1) 1) "m.name"
-
 2) "a1.name"
-
 3) "a2.name"
-
 2) 1) 1) "Our Idiot Brother"
-
 2) "Paul Rudd"
-
 3) "Kathryn Hahn"
-
+```
 
 That last query gives us a glimpse into the power of the Cypher Query Language. We can graphically draw the connections between the two actors, remove any duplicated (the permutations problem) by making sure we don’t match on the same node (Paul Rudd and Paul Rudd) and variations of the same pair (Paul Rudd and Kathryn Hahn vs. Kathryn Hahn and Paul Rudd) by ordering the pair using the id function.
 
-Creating the Redi2Read Graph
-
+### Creating the Redi2Read Graph
 
 Now that we have a cursory understanding of Redis Graph and the Cypher Query Language, let’s build the graph that will power our recommendations in Redi2Read.
 We will create a graph containing the following relationships:
@@ -4604,30 +4141,26 @@ We will create a graph containing the following relationships:
 - User -> RATED -> Book
 - User -> PURCHASED -> Book
 
-Using Redis Graph in Java
+### Using Redis Graph in Java
 
 
 To create and query graphs in Redi2Read we will use the JRedisGraph client library for Redis Graph (https://github.com/RedisGraph/JRedisGraph) built on top of the popular Jedis client library (https://github.com/redis/jedis)
 
-Adding the JRedisGraph dependency
+#### Adding the JRedisGraph dependency
 
 
 In your Maven pom.xml, add the following dependency:
 ```xml
 <dependency>
-
 <groupId>com.redislabs</groupId>
-
 <artifactId>jredisgraph</artifactId>
-
 <version>2.3.0</version>
-
 </dependency>
 ```
  
 
 
-CommandLineRunner
+#### CommandLineRunner
 
 
 To create our graph we’ll use the now familiar CommandLineRunner recipe. We will keep the name of the created graph in the applications property field as shown:
@@ -4640,214 +4173,109 @@ Next, create the src/main/java/com/redislabs/edu/redi2read/boot/CreateGraph.java
 ```java
 package com.redislabs.edu.redi2read.boot;
 
-
-
 import java.util.HashSet;
-
 import java.util.Set;
 
-
-
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.beans.factory.annotation.Value;
-
 import org.springframework.boot.CommandLineRunner;
-
 import org.springframework.core.annotation.Order;
-
 import org.springframework.data.redis.core.RedisTemplate;
-
 import org.springframework.stereotype.Component;
 
-
-
 import com.redislabs.edu.redi2read.repositories.BookRatingRepository;
-
 import com.redislabs.edu.redi2read.repositories.BookRepository;
-
 import com.redislabs.edu.redi2read.repositories.CategoryRepository;
-
 import com.redislabs.edu.redi2read.repositories.UserRepository;
-
 import com.redislabs.redisgraph.impl.api.RedisGraph;
-
-
 
 import lombok.extern.slf4j.Slf4j;
 
-
-
 @Component
-
 @Order(8)
-
 @Slf4j
-
 public class CreateGraph implements CommandLineRunner {
 
-
-
 @Autowired
-
 private RedisTemplate<String, String> redisTemplate;
 
-
-
 @Autowired
-
 private UserRepository userRepository;
 
-
-
 @Autowired
-
 private BookRepository bookRepository;
 
-
-
 @Autowired
-
 private BookRatingRepository bookRatingRepository;
 
-
-
 @Autowired
-
 private CategoryRepository categoryRepository;
 
-
-
 @Value("${app.graphId}")
-
 private String graphId;
 
-
-
 @Override
-
 public void run(String... args) throws Exception {
-
 if (!redisTemplate.hasKey(graphId)) {
-
 try (RedisGraph graph = new RedisGraph()) {
-
 // create an index for Books on id
-
 graph.query(graphId, "CREATE INDEX ON :Book(id)");
-
 graph.query(graphId, "CREATE INDEX ON :Category(id)");
-
 graph.query(graphId, "CREATE INDEX ON :Author(name)");
-
 graph.query(graphId, "CREATE INDEX ON :User(id)");
-
-
 
 Set<String> authors = new HashSet<String>();
 
-
-
 // for each category create a graph node
-
 categoryRepository.findAll().forEach(c -> {
-
 graph.query(graphId, String.format("CREATE (:Category {id: \"%s\", name: \"%s\"})", c.getId(), c.getName()));
-
 });
-
-
 
 // for each book create a graph node
-
 bookRepository.findAll().forEach(b -> {
-
 graph.query(graphId, String.format("CREATE (:Book {id: \"%s\", title: \"%s\"})", b.getId(), b.getTitle()));
-
 // for each author create an AUTHORED relationship to the book
-
 if (b.getAuthors() != null) {
-
 b.getAuthors().forEach(a -> {
-
 if (!authors.contains(a)) {
-
 graph.query(graphId, String.format("CREATE (:Author {name: \"%s\"})", a));
-
 authors.add(a);
-
 }
-
 graph.query(graphId, String.format(
-
 "MATCH (a:Author {name: \"%s\"}), (b:Book {id: \"%s\"}) CREATE (a)-[:AUTHORED]->(b)", a, b.getId()));
-
 });
-
-
 
 b.getCategories().forEach(c -> {
-
 graph.query(graphId,
-
 String.format("MATCH (b:Book {id: \"%s\"}), (c:Category {id: \"%s\"}) CREATE (b)-[:IN]->(c)",
-
 b.getId(), c.getId()));
-
 });
-
 }
-
 });
-
-
 
 // for each user create a graph node
-
 userRepository.findAll().forEach(u -> {
-
 graph.query(graphId, String.format("CREATE (:User {id: \"%s\", name: \"%s\"})", u.getId(), u.getName()));
 
-
-
 // for each of the user's book create a purchased relationship
-
 u.getBooks().forEach(book -> {
-
 graph.query(graphId,
-
 String.format("MATCH (u:User {id: \"%s\"}), (b:Book {id: \"%s\"}) CREATE (u)-[:PURCHASED]->(b)",
-
 u.getId(), book.getId()));
-
 });
-
 });
-
-
 
 // for each book rating create a rated relationship
-
 bookRatingRepository.findAll().forEach(br -> {
-
 graph.query(graphId,
-
 String.format("MATCH (u:User {id: \"%s\"}), (b:Book {id: \"%s\"}) CREATE (u)-[:RATED {rating: %s}]->(b)",
-
 br.getUser().getId(), br.getBook().getId(), br.getRating()));
-
 });
-
 }
-
-
 
 log.info(">>>> Created graph...");
-
 }
-
 }
-
 }
 ```
 
@@ -4867,7 +4295,7 @@ Let’s break down the graph creation:
 - For each book rating we create a RATED relationship between the user and the book
 
 
-Creating the Recommendations Service
+### Creating the Recommendations Service
 
 
 As we did in the Search Lesson, we are going to use a Service abstraction to encapsulate the complexity of the recommendations engine.
@@ -4876,46 +4304,24 @@ Let’s start with the skeleton of the recommendation service. Create the src/ma
 ```java
 package com.redislabs.edu.redi2read.services;
 
-
-
 import java.util.HashSet;
-
 import java.util.Set;
 
-
-
 import com.redislabs.redisgraph.Record;
-
 import com.redislabs.redisgraph.ResultSet;
-
 import com.redislabs.redisgraph.graph_entities.Node;
-
 import com.redislabs.redisgraph.impl.api.RedisGraph;
 
-
-
 import org.springframework.beans.factory.annotation.Value;
-
 import org.springframework.stereotype.Service;
 
-
-
 @Service
-
 public class RecommendationService {
 
-
-
 @Value("${app.graphId}")
-
 public String graphId;
 
-
-
 RedisGraph graph = new RedisGraph();
-
- 
-
 // add magic here!
 
 }
@@ -4923,19 +4329,15 @@ RedisGraph graph = new RedisGraph();
 
 
 
-Getting Book Recommendations From Common Purchases
+### Getting Book Recommendations From Common Purchases
 
 
 Our first recommendation method will find recommendations by looking at purchases of other users that have bought some of the same books a user has in its bookshelf:
 ```
 MATCH (u:User { id: '8675309' })-[:PURCHASED]->(ob:Book)
-
 MATCH (ob)<-[:PURCHASED]-(:User)-[:PURCHASED]->(b:Book)
-
 WHERE NOT (u)-[:PURCHASED]->(b)
-
 RETURN distinct b, count(b) as frequency
-
 ORDER BY frequency DESC
 ```
 
@@ -4949,77 +4351,53 @@ Let’s break down the Cypher query:
 
 Running query on RedisInsight we get graphical display in which we can navigate the relationships of the result set:
 
+Here's our logo (hover to see the title text):
 
+![alt text](img/graph.png)
 
 
 There is also a tabular results view that reflect the values of the RETURN clause:
 
-
-
-
-
+![alt text](img/graph_tabular.png)
 
 To implement the above query in the recommendations service we can escape the query string, and we simply pass the prepared query string to JRedisGraph’s query method:
 ```java
 public Set<String> getBookRecommendationsFromCommonPurchasesForUser(String userId) {
-
 Set<String> recommendations = new HashSet<String>();
 
 
-
 String query = "MATCH (u:User { id: '%s' })-[:PURCHASED]->(ob:Book) " //
-
 + "MATCH (ob)<-[:PURCHASED]-(:User)-[:PURCHASED]->(b:Book) " //
-
 + "WHERE NOT (u)-[:PURCHASED]->(b) " //
-
 + "RETURN distinct b, count(b) as frequency " //
-
 + "ORDER BY frequency DESC";
-
-
 
 ResultSet resultSet = graph.query(graphId, String.format(query, userId));
 
-
-
 while (resultSet.hasNext()) {
-
 Record record = resultSet.next();
-
 Node book = record.getValue("b");
-
 recommendations.add(book.getProperty("id").getValue().toString());
-
 }
 
-
-
 return recommendations;
-
 }
 ```
 
 Similar to a JDBC result set, we have an iterator that returns Record objects. We extract the column of interest by its label, in the case above “b” for the Book entity. Graph Nodes like the “book” variable above are like Maps, we can get a property by its name “id” and then get the value with getValue().
 
-Books Frequently Bought Together
+### Books Frequently Bought Together
 
 
 To find books that are frequently bought together give an ISBN we use the query:
 
 ```
 MATCH (u:User)-[:PURCHASED]->(b1:Book {id: '%s'})
-
 MATCH (b1)<-[:PURCHASED]-(u)-[:PURCHASED]->(b2:Book)
-
 MATCH rated = (User)-[:RATED]-(b2) " //
-
 WITH b1, b2, count(b2) as freq, head(relationships(rated)) as r
-
 WHERE b1 <> b2
-
 RETURN b2, freq, avg(r.rating)
-
 ORDER BY freq, avg(r.rating) DESC
 ```
 
@@ -5033,106 +4411,60 @@ Let break it down:
 To implement the above query in our service add the following method:
 ```java
 public Set<String> getFrequentlyBoughtTogether(String isbn) {
-
 Set<String> recommendations = new HashSet<String>();
 
-
-
 String query = "MATCH (u:User)-[:PURCHASED]->(b1:Book {id: '%s'}) " //
-
 + "MATCH (b1)<-[:PURCHASED]-(u)-[:PURCHASED]->(b2:Book) " //
-
 + "MATCH rated = (User)-[:RATED]-(b2) " //
-
 + "WITH b1, b2, count(b2) as freq, head(relationships(rated)) as r " //
-
 + "WHERE b1 <> b2 " //
-
 + "RETURN b2, freq, avg(r.rating) " //
-
 + "ORDER BY freq, avg(r.rating) DESC";
 
-
-
 ResultSet resultSet = graph.query(graphId, String.format(query, isbn));
-
 while (resultSet.hasNext()) {
-
 Record record = resultSet.next();
-
 Node book = record.getValue("b2");
-
 recommendations.add(book.getProperty("id").getValue().toString());
-
 }
-
 return recommendations;
-
 }
 ```
  
 
-The Recommendations Controller
+### The Recommendations Controller
 
 
 To serve our recommendations we will expose the recommendation service using the RecommendationController. Create the src/main/java/com/redislabs/edu/redi2read/controllers/RecommendationController.java file and add the contents as follows:
 ```java
 package com.redislabs.edu.redi2read.controllers;
 
-
-
 import java.util.Set;
-
-
 
 import com.redislabs.edu.redi2read.services.RecommendationService;
 
-
-
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.web.bind.annotation.GetMapping;
-
 import org.springframework.web.bind.annotation.PathVariable;
-
 import org.springframework.web.bind.annotation.RequestMapping;
-
 import org.springframework.web.bind.annotation.RestController;
 
-
-
 @RestController
-
 @RequestMapping("/api/recommendations")
-
 public class RecommendationController {
 
-
-
 @Autowired
-
 private RecommendationService recommendationService;
 
-
-
 @GetMapping("/user/{userId}")
-
 public Set<String> userRecommendations(@PathVariable("userId") String userId) {
-
 return recommendationService.getBookRecommendationsFromCommonPurchasesForUser(userId);
-
 }
-
-
 
 @GetMapping("/isbn/{isbn}/pairings")
-
 public Set<String> frequentPairings(@PathVariable("isbn") String isbn) {
-
 return recommendationService.getFrequentlyBoughtTogether(isbn);
-
 }
-
 }
 ```
 
@@ -5151,12 +4483,7 @@ curl --location --request GET 'http://localhost:8080/api/recommendations/isbn/17
 
 # Caching REST Services with Redis
 
-
-Brian Sam-Bodden (bsb@redislabs.com)
-Andrew Brookins (andrew.brookins@redislabs.com)
-
 ## OBJECTIVES
-
 
 Learn how easy it is to use Redis as a cache in your Spring applications
 
@@ -5180,45 +4507,26 @@ To implement caching in our Spring Boot application:
 
 In the main application file (src/main/java/com/redislabs/edu/redi2read/Redi2readApplication.java), add the cacheManager method as shown:
 
-```
+```java
 @SpringBootApplication
-
 @EnableCaching
-
 public class Redi2readApplication {
 
-
-
 // ...
-
- 
 
 @Bean
-
 public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-
 RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig() //
-
 .prefixCacheNameWith(this.getClass().getPackageName() + ".") //
-
 .entryTtl(Duration.ofHours(1)) //
-
 .disableCachingNullValues();
 
-
-
 return RedisCacheManager.builder(connectionFactory) //
-
 .cacheDefaults(config) //
-
 .build();
-
 }
 
-
-
 // ...
-
 }
 ```
 
@@ -5231,15 +4539,13 @@ At the class level, we also use the annotation @EnableCaching to globally enable
 The changes above will need the import statements shown below:
 ```java
 import org.springframework.cache.annotation.EnableCaching;
-
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
-
 import org.springframework.data.redis.cache.RedisCacheManager;
 
 import java.time.Duration;
 ```
 
-Using the @Cacheable annotation
+### Using the @Cacheable annotation
 
 
 In the context of a RESTful service, caching makes sense at the handoff between the application and the HTTP protocol. It seems almost silly to think about caching anything in an application powered by Redis, but complex business logic touching many data repositories and performing intense calculations can add to your response’s latency.
@@ -5248,32 +4554,26 @@ The ideal place to perform this caching is at the controller level. For example,
 
 ```java
 @GetMapping("/search")
-
 @Cacheable("book-search")
-
 public SearchResults<String,String> search(@RequestParam(name="q")String query) {
-
 RediSearchCommands<String, String> commands = searchConnection.sync();
-
 SearchResults<String, String> results = commands.search(searchIndexName, query);
-
 return results;
-
 }
 ```
 
 Spring will now use Redis to create keys under the “com.redislabs.edu.redi2read.book-search” prefix to store cache entries for the search method. There is no need to perform cache maintenance yourself. Spring will intercept the request and check the cache; in the case of a cache hit, it will return its value. Otherwise, in case of a miss, it will store the cache’s search method’s return value, allowing the method to execute as if there was no cache at all.
 
-If we try the request http://localhost:8080/api/books/search?q=java:
+If we try the request http://localhost:8080/api/books/search?q=java`:
 ```shell
 curl --location --request GET 'http://localhost:8080/api/books/search?q=java'
 ```
 
 On the first request we get a 28 ms response time:
 
-
+![alt text](img/search.png)
 
 Subsequent responses return in the range of 8 ms to 10 ms consistently:
 
-
+![alt text](img/search_cache.png)
  
