@@ -63,7 +63,8 @@ In this lesson, you will learn:
 - How to add a docker-compose file as a Git submodule to your application to configure and run Redis
 - How to add a Git submodule with the application’s sample raw data
 - How to launch a Redis instance suitable for the course
-  If you get stuck:
+  
+If you get stuck:
 - The progress made in this lesson is available on the redi2read github repository at https://github.com/redis-developer/redi2read/tree/course/milestone-1
 
 
@@ -78,19 +79,19 @@ If you want to start with a fully configured Spring Boot application and wish to
 - Language: Java
 - Spring Boot: 2.4.4
 - Project Metadata:
-  Group: com.redislabs.edu
-  Artifact: redi2read
-  Name: redi2read
-  Description: Bookstore Web Services Powered by Redis
-  Package Name: com.redislabs.edu.redi2read
-  Packaging: JAR
-  Java: 11
+  -  Group: com.redislabs.edu
+  -  Artifact: redi2read
+  -  Name: redi2read
+  -  Description: Bookstore Web Services Powered by Redis
+  -  Package Name: com.redislabs.edu.redi2read
+  -  Packaging: JAR
+  -  Java: 11
 - Dependencies:
-  Spring Web
-  String Data Redis (Access + Driver)
-  Spring Security
-  Lombok
-  Spring Boot DevTools
+  -  Spring Web
+  -  String Data Redis (Access + Driver)
+  -  Spring Security
+  -  Lombok
+  -  Spring Boot DevTools
 
 Alternatively, you can use the following URL: http://bit.ly/spring-initlz-redi2read to launch the Spring Initilizr fully configured for the project.
 
@@ -227,7 +228,9 @@ Let open a terminal window and change directories to the /docker directory under
 
 To start our Docker Redis image, we’ll use the docker-compose command as follows:
 
-```docker-compose up```
+```shell
+docker-compose up
+```
 
 
 You should see output similar to this:
@@ -268,7 +271,7 @@ root@0f99ea35b9c1:/data# redis-cli
 
 
 If you already have the Redis CLI installed locally, you can launch it by simply entering:
-```
+```shell
 $ redis-cli
 127.0.0.1:6379>
 ```
@@ -509,11 +512,9 @@ If we launch the application now with:
  
 
 We can use curl to invoke our api/redis/strings endpoint:
-```
+```shell
 $ curl --location --request POST 'http://localhost:8080/api/redis/strings' \
-
 --header 'Content-Type: application/json' \
-
 --data-raw '{ "database:redis:creator": "Salvatore Sanfilippo" }'
 ```
 ```json
@@ -536,7 +537,7 @@ return kvp;
 We will use the RedisTemplate instance template opsForValue() method to get an instance of ValueOperations, which provides methods to execute operations performed on simple values (or Strings in Redis terminology).
 The Redis SET method is implemented using the (you guessed it!) set() method, which takes a key name and a value. We are prepending the KEY_SPACE_PREFIX to the key that's provided as an argument.
 Before you fire up another curl request, let’s start a Redis CLI instance with the MONITOR flag so that we can watch what transpires when we hit the server.
-```
+``` shell
 $ redis-cli MONITOR
 ```
 
@@ -548,17 +549,11 @@ Now, when you issue the POST request again, you should see output similar to:
 We can launch another Redis CLI to query Redis ourselves:
 ```
 127.0.0.1:6379> KEYS *
-
 1) "redi2read:strings:database:redis:creator"
-
 127.0.0.1:6379> TYPE "redi2read:strings:database:redis:creator"
-
 string
-
 127.0.0.1:6379> GET "redi2read:strings:database:redis:creator"
-
 "Salvatore Sanfilippo"
-
 127.0.0.1:6379>
 ```
 
@@ -591,7 +586,7 @@ import org.springframework.web.server.ResponseStatusException;
 ```
 
 We can now issue a GET request to retrieve String keys:
-```
+```shell
 $ curl --location --request GET 'http://localhost:8080/api/redis/strings/database:redis:creator'
 ```
 ```json
@@ -813,7 +808,7 @@ Let’s test the RoleRepository by using a CommandLineRunner implementation. A S
 
 A Spring Boot application can have many CommandLineRunners; to control the order of their execution, we can further annotate them with the @Order annotation.
 
-Create the directory src/main/java/com/redislabs/edu/redi2read/boot and then add the CreateRoles class:
+Create the directory `src/main/java/com/redislabs/edu/redi2read/boot` and then add the CreateRoles class:
 ```java
 package com.redislabs.edu.redi2read.boot;
 
@@ -837,9 +832,7 @@ To test the command line runner we have a System.out.println in the run method t
 
 ```
 2021-04-02 14:32:58.374 INFO 41500 --- [ restartedMain] c.r.edu.redi2read.Redi2readApplication  : Started Redi2readApplication in 0.474 seconds (JVM running for 74714.143)
-
 >>> Hello from the CreateRoles CommandLineRunner...
-
 2021-04-02 14:32:58.375 INFO 41500 --- [ restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
 ```
 
@@ -848,64 +841,34 @@ Now that we know the CreateRoles component runs, let's complete it to work with 
 ```java
 package com.redislabs.edu.redi2read.boot;
 
-
-
 import com.redislabs.edu.redi2read.models.Role;
-
 import com.redislabs.edu.redi2read.repositories.RoleRepository;
 
-
-
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.boot.CommandLineRunner;
-
 import org.springframework.core.annotation.Order;
-
 import org.springframework.stereotype.Component;
-
-
 
 import lombok.extern.slf4j.Slf4j;
 
-
-
 @Component
-
 @Order(1)
-
 @Slf4j
-
 public class CreateRoles implements CommandLineRunner {
 
-
-
 @Autowired
-
 private RoleRepository roleRepository;
 
-
-
 @Override
-
 public void run(String... args) throws Exception {
-
 if (roleRepository.count() == 0) {
-
 Role adminRole = Role.builder().name("admin").build();
-
 Role customerRole = Role.builder().name("customer").build();
-
 roleRepository.save(adminRole);
-
 roleRepository.save(customerRole);
-
 log.info(">>>> Created admin and customer roles...");
-
 }
-
 }
-
 }
 ```
 
@@ -920,7 +883,6 @@ To properly log a message we’ll use the @Slf4j (Simple Logging Facade for Java
 On server start we should now see, once, the output of our database seeding.
 ```
 2021-04-02 19:28:25.367 INFO 94971 --- [ restartedMain] c.r.edu.redi2read.Redi2readApplication  : Started Redi2readApplication in 2.146 seconds (JVM running for 2.544)
-
 2021-04-02 19:28:25.654 INFO 94971 --- [ restartedMain] c.r.edu.redi2read.boot.CreateRoles      : >>>> Created admin and customer roles...
 ```
 
@@ -928,32 +890,21 @@ Let’s use the Redis CLI to explore how the Roles were stored, let’s use the 
 
 ```
 127.0.0.1:6379> KEYS com.redislabs.edu.redi2read.models.Role*
-
 1) "com.redislabs.edu.redi2read.models.Role:c4219654-0b79-4ee6-b928-cb75909c4464"
-
 2) "com.redislabs.edu.redi2read.models.Role:9d383baf-35a0-4d20-8296-eedc4bea134a"
-
 3) "com.redislabs.edu.redi2read.models.Role"
 ```
 
 The first two values are Hashes, actual instances of the Role class. The string after the `:` is the primary key of the individual Role. Let’s inspect one of those hashes:
 ```
 127.0.0.1:6379> TYPE "com.redislabs.edu.redi2read.models.Role:c4219654-0b79-4ee6-b928-cb75909c4464"
-
 hash
-
 127.0.0.1:6379> HGETALL "com.redislabs.edu.redi2read.models.Role:c4219654-0b79-4ee6-b928-cb75909c4464"
-
 1) "_class"
-
 2) "com.redislabs.edu.redi2read.models.Role"
-
 3) "id"
-
 4) "c4219654-0b79-4ee6-b928-cb75909c4464"
-
 5) "name"
-
 6) "admin"
 ```
 
@@ -962,13 +913,9 @@ Using the TYPE command returns, as expected that the value under the key is a Re
 Now let’s inspect the third value in the KEYS list:
 ```
 127.0.0.1:6379> TYPE "com.redislabs.edu.redi2read.models.Role"
-
 set
-
 127.0.0.1:6379> SMEMBERS "com.redislabs.edu.redi2read.models.Role"
-
 1) "9d383baf-35a0-4d20-8296-eedc4bea134a"
-
 2) "c4219654-0b79-4ee6-b928-cb75909c4464"
 ```
 
@@ -976,9 +923,6 @@ The Redis Set under the mapped class name is used to keep the primary keys maint
 
 # User/Roles & Secondary Indexes
 
-
-Brian Sam-Bodden (bsb@redislabs.com)
-Andrew Brookins (andrew.brookins@redislabs.com)
 
 
 ## OBJECTIVES
@@ -1035,7 +979,7 @@ User findFirstByEmail(String email);
 }
 ```
 
-The findFirstByEmail method takes advantage of the index we previously created on the email field of the User model. The Spring Repository will provide an implementation of the finder method at runtime. We will use this finder when we tackle our application's security.
+The `findFirstByEmail` method takes advantage of the index we previously created on the email field of the User model. The Spring Repository will provide an implementation of the finder method at runtime. We will use this finder when we tackle our application's security.
 
 Let’s create another CommandLineRunner under the boot package to load the users. We’ll follow a similar recipe for the Roles, except that we will load the JSON data from disk and use Jackson (https://github.com/FasterXML/jackson), one of the most popular Java JSON libraries.
 
@@ -1102,19 +1046,12 @@ Now when a new Role instance is created, with ID as "abc-123" and role as “sup
 Unfortunately, to index the already created Roles, we’ll need to either retrieve them and resave them or recreate them. Since we already have automated the seeding of the Roles and we haven’t yet created any associated objects, we can simply delete them using the Redis CLI and the DEL command and restart the server:
 ```
 127.0.0.1:6379> KEYS com.redislabs.edu.redi2read.models.Role*
-
 1) "com.redislabs.edu.redi2read.models.Role:c4219654-0b79-4ee6-b928-cb75909c4464"
-
 2) "com.redislabs.edu.redi2read.models.Role:9d383baf-35a0-4d20-8296-eedc4bea134a"
-
 3) "com.redislabs.edu.redi2read.models.Role"
-
 127.0.0.1:6379> DEL "com.redislabs.edu.redi2read.models.Role:c4219654-0b79-4ee6-b928-cb75909c4464" "com.redislabs.edu.redi2read.models.Role:9d383baf-35a0-4d20-8296-eedc4bea134a" "com.redislabs.edu.redi2read.models.Role"
-
 (integer) 3
-
 127.0.0.1:6379>
-
 ```
 
 
@@ -1427,9 +1364,6 @@ Returns the expected result:
 
 # Books, Categories & The Catalog
 
-Brian Sam-Bodden (bsb@redislabs.com)
-Andrew Brookins (andrew.brookins@redislabs.com)
-
 ## OBJECTIVES
 
 
@@ -1504,7 +1438,7 @@ public interface CategoryRepository extends CrudRepository<Category, String> {
 ### The Book Model
 
 
-The ```Book``` model maps directly to the JSON payload in the *.json files in src/main/resources/data/books. For example, the JSON object shown below came from the the file redis_0.json:
+The `Book` model maps directly to the JSON payload in the *.json files in `src/main/resources/data/books`. For example, the JSON object shown below came from the file `redis_0.json`:
 
 ```json
 {
@@ -1528,7 +1462,7 @@ The category name is extracted from the file name as “redis”. The same appli
 
 The Book class contains a Set<Category> which will for now contain the single category extracted from the filename. The Set<String> for authors gets mapped from the “authors” JSON array in the payload.
 
-Add the file src/main/java/com/redislabs/edu/redi2read/repositories/Book.java with the following contents:
+Add the file `src/main/java/com/redislabs/edu/redi2read/repositories/Book.java` with the following contents:
 
 ```java
 package com.redislabs.edu.redi2read.models;
@@ -1551,25 +1485,15 @@ public class Book {
 @Id
 @EqualsAndHashCode.Include
 private String id;
-
 private String title;
-
 private String subtitle;
-
 private String description;
-
 private String language;
-
 private Long pageCount;
-
 private String thumbnail;
-
 private Double price;
-
 private String currency;
-
 private String infoLink;
-
 private Set<String> authors;
 
 @Reference
@@ -1613,9 +1537,9 @@ The BookRating model represents a rating of a book by a user. We implement a tra
 
 BookRating sits between the two other entities of a many-to-many relationship. Its purpose is to store a record for each of the combinations of these other two entities (Book and User).
 
-We keep the links to the Book` and `User` models using the `@Reference` annotation (the equivalent of having foreign keys in a relational database)
+We keep the links to the `Book` and `User` models using the `@Reference` annotation (the equivalent of having foreign keys in a relational database)
 
-Add the file src/main/java/com/redislabs/edu/redi2read/models/BookRating.java` with the following contents:
+Add the file `src/main/java/com/redislabs/edu/redi2read/models/BookRating.java` with the following contents:
 
 ```java
 package com.redislabs.edu.redi2read.models;
@@ -1836,59 +1760,35 @@ return bookRepository.findById(isbn).get();
 
 To get all books, we issue a GET request to 'http://localhost:8080/api/books/'. This endpoint is implemented in the all method, which calls the BookRepository findAll method. Using curl:
 ```shell
-curl --location --request GET 'http://localhost:8080/api/books/'~
+curl --location --request GET 'http://localhost:8080/api/books/'
 ```
 
 The result is an array of JSON objects containing the books:
 ```json
 [
-
 {
-
 "id": "1783980117",
-
 "title": "RESTful Java Web Services Security",
-
 "subtitle": null,
-
 "description": "A sequential and easy-to-follow guide which allows you to understand the concepts related to securing web apps/services quickly and efficiently, since each topic is explained and described with the help of an example and in a step-by-step manner, helping you to easily implement the examples in your own projects. This book is intended for web application developers who use RESTful web services to power their websites. Prior knowledge of RESTful is not mandatory, but would be advisable.",
-
 "language": "en",
-
 "pageCount": 144,
-
 "thumbnail": "http://books.google.com/books/content?id=Dh8ZBAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-
 "price": 11.99,
-
 "currency": "USD",
-
 "infoLink": "https://play.google.com/store/books/details?id=Dh8ZBAAAQBAJ&source=gbs_api",
-
 "authors": [
-
 "Andrés Salazar C.",
-
 "René Enríquez"
-
 ],
-
 "categories": [
-
 {
-
 "id": "f2ada1e2-7c18-4d90-bfe7-e321b650c0a3",
-
 "name": "redis"
-
 }
-
 ]
-
 },
-
 ...
-
 ]
 ```
 
@@ -1905,45 +1805,25 @@ The result is a JSON object containing the book:
 
 ```json
 {
-
 "id": "1680503545",
-
 "title": "Functional Programming in Java",
-
 "subtitle": "Harnessing the Power Of Java 8 Lambda Expressions",
-
 "description": "Intermediate level, for programmers fairly familiar with Java, but new to the functional style of programming and lambda expressions. Get ready to program in a whole new way. ...",
-
 "language": "en",
-
 "pageCount": 196,
-
 "thumbnail": "http://books.google.com/books/content?id=_g5QDwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-
 "price": 28.99,
-
 "currency": "USD",
-
 "infoLink": "https://play.google.com/store/books/details?id=_g5QDwAAQBAJ&source=gbs_api",
-
 "authors": [
-
 "Venkat Subramaniam"
-
 ],
-
 "categories": [
-
 {
-
 "id": "9d5c025e-bf38-4b50-a971-17e0b7408385",
-
 "name": "java"
-
 }
-
 ]
-
 }
 ```
 
@@ -1952,7 +1832,7 @@ The result is a JSON object containing the book:
 
 
 To get all categories, we issue a GET request to 'http://localhost:8080/api/books/categories'. It’s implemented in the getCategories method, which calls the CategoriesRepository findAll method. Using curl:
-```
+```shell
 curl --location --request GET 'http://localhost:8080/api/books/categories'
 ```
 
@@ -1960,135 +1840,70 @@ The result is an array of JSON objects containing the categories:
 
 ```json
 [
-
 {
-
 "id": "2fd916fe-7ff8-44c7-9f86-ca388565256c",
-
 "name": "mongodb"
-
 },
-
 {
-
 "id": "9615a135-7472-48fc-b8ac-a5516a2c8b22",
-
 "name": "dynamodb"
-
 },
-
 {
-
 "id": "f2ada1e2-7c18-4d90-bfe7-e321b650c0a3",
-
 "name": "redis"
-
 },
-
 {
-
 "id": "08fc8148-d924-4d2e-af7e-f5fe6f2861f0",
-
 "name": "elixir"
-
 },
-
 {
-
 "id": "b6a0b57b-ebb8-4d98-9352-8236256dbc27",
-
 "name": "microservices"
-
 },
-
 {
-
 "id": "7821fd6a-ec94-4ac6-8089-a480a7c7f2ee",
-
 "name": "elastic_search"
-
 },
-
 {
-
 "id": "f2be1bc3-1700-45f5-a300-2c4cf2f90583",
-
 "name": "hbase"
-
 },
-
 {
-
 "id": "31c8ea64-cad2-40d9-b0f6-30b8ea6fcbfb",
-
 "name": "reactjs"
-
 },
-
 {
-
 "id": "5e527af7-93a1-4c00-8f20-f89e89a213e8",
-
 "name": "apache_spark"
-
 },
-
 {
-
 "id": "9d5c025e-bf38-4b50-a971-17e0b7408385",
-
 "name": "java"
-
 },
-
 {
-
 "id": "bcb2a01c-9b0a-4846-b1be-670168b5d768",
-
 "name": "clojure"
-
 },
-
 {
-
 "id": "aba53bb9-7cfa-4b65-8900-8c7e857311c6",
-
 "name": "couchbase"
-
 },
-
 {
-
 "id": "bd1b2877-1564-4def-b3f7-18871165ff10",
-
 "name": "riak"
-
 },
-
 {
-
 "id": "47d9a769-bbc2-4068-b27f-2b800bec1565",
-
 "name": "kotlin"
-
 },
-
 {
-
 "id": "400c8f5a-953b-4b8b-b21d-045535d8084d",
-
 "name": "nosql_big_data"
-
 },
-
 {
-
 "id": "06bc25ff-f2ab-481b-a4d9-819552dea0e0",
-
 "name": "javascript"
-
 }
-
 ]
 ```
 
@@ -2219,93 +2034,49 @@ curl --location --request GET 'http://localhost:8080/api/books/?size=25&page=2'
 Passing a page size of 25 and requesting page number 2, we get the following:
 ```json
 {
-
 "total": 2403,
-
 "books": [
-
 {
-
 "id": "1786469960",
-
 "title": "Data Visualization with D3 4.x Cookbook",
-
 "subtitle": null,
-
 "description": "Discover over 65 recipes to help you create breathtaking data visualizations using the latest features of D3...",
-
 "language": "en",
-
 "pageCount": 370,
-
 "thumbnail": "http://books.google.com/books/content?id=DVQoDwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-
 "price": 22.39,
-
 "currency": "USD",
-
 "infoLink": "https://play.google.com/store/books/details?id=DVQoDwAAQBAJ&source=gbs_api",
-
 "authors": [
-
 "Nick Zhu"
-
 ],
-
 "categories": [
-
 {
-
 "id": "f2ada1e2-7c18-4d90-bfe7-e321b650c0a3",
-
 "name": "redis"
-
 }
-
 ]
-
 },
-
 {
-
 "id": "111871735X",
-
 "title": "Android Programming",
-
 "subtitle": "Pushing the Limits",
-
 "description": "Unleash the power of the Android OS and build the kinds ofbrilliant, innovative apps users love to use ...",
-
 "language": "en",
-
 "pageCount": 432,
-
 "thumbnail": "http://books.google.com/books/content?id=SUWPAQAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-
 "price": 30.0,
-
 "currency": "USD",
-
 "infoLink": "https://play.google.com/store/books/details?id=SUWPAQAAQBAJ&source=gbs_api",
-
 "authors": [
-
 "Erik Hellman"
-
 ],
-
 "categories": [
-
 {
-
 "id": "47d9a769-bbc2-4068-b27f-2b800bec1565",
-
 "name": "kotlin"
-
 }
-
 ]
-
 },
 ```
  
@@ -2392,9 +2163,7 @@ import lombok.Data;
 public class CartItem {
 
 private String isbn;
-
 private Double price;
-
 private Long quantity;
 
 }
@@ -2422,30 +2191,20 @@ import lombok.Singular;
 public class Cart {
 
 private String id;
-
 private String userId;
-
 @Singular
 private Set<CartItem> cartItems;
-
 public Integer count() {
-
 return getCartItems().size();
-
 }
 
 
 
 public Double getTotal() {
-
 return cartItems //
-
 .stream() //
-
 .mapToDouble(ci -> ci.getPrice() * ci.getQuantity()) //
-
 .sum();
-
 }
 
 }
@@ -3025,9 +2784,6 @@ Which should return a payload like:
 
 # Search with RediSearch
 
-Brian Sam-Bodden (bsb@redislabs.com)
-Andrew Brookins (andrew.brookins@redislabs.com)
-
 
 ## OBJECTIVES
 
@@ -3186,27 +2942,16 @@ You can see the index information with the following command in the Redis CLI:
 
 ```
 127.0.0.1:6379> FT.INFO "books-idx"
-
 1) index_name
-
 2) books-idx
-
 ...
-
 9) num_docs
-
 10) "2403"
-
 11) max_doc_id
-
 12) "2403"
-
 13) num_terms
-
 14) "32863"
-
 15) num_records
-
 16) "413522"
 ```
 
@@ -3305,7 +3050,7 @@ return results;
 ```
 
 With the imports:
-```
+```java
 import com.redislabs.lettusearch.RediSearchCommands;
 import com.redislabs.lettusearch.SearchResults;
 import com.redislabs.lettusearch.StatefulRediSearchConnection;
@@ -3379,7 +3124,7 @@ app.autoCompleteKey=author-autocomplete
 
 Add the file src/main/java/com/redislabs/edu/redi2read/boot/CreateAuthorNameSuggestions.java with the following contents:
 
-```
+```java
 package com.redislabs.edu.redi2read.boot;
 
 import com.redislabs.edu.redi2read.repositories.BookRepository;
@@ -3462,7 +3207,7 @@ import com.redislabs.lettusearch.SuggetOptions;
 In the authorAutoComplete method, we use the FT.SUGGET command (via the sugget method from the RediSearchCommands object) and build a query using a SuggetOptions configuration. In the example above, we set the maximum number of results to 20.
 
 We can use curl to craft a request to our new endpoint. In this example, I’m passing “brian s” as the query:
-```
+```shell
 curl --location --request GET 'http://localhost:8080/api/books/authors/?q=brian%20s'
 ```
 
@@ -3484,7 +3229,7 @@ This results in a response with 2 JSON objects:
 
 If we add one more letter to our query to make it “brian sa”:
 
-```
+```shell
 curl --location --request GET 'http://localhost:8080/api/books/authors/?q=brian%20sa'
 ```
 
@@ -3501,8 +3246,6 @@ We get the expected narrowing of the suggestion set:
 
 # Recommendations with RedisGraph
 
-Brian Sam-Bodden (bsb@redislabs.com)
-Andrew Brookins (andrew.brookins@redislabs.com)
 
 ## OBJECTIVES
 

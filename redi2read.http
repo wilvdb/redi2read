@@ -1,15 +1,58 @@
+# curl --location --request POST 'http://localhost:8080/api/redis/strings'
+#--header 'Content-Type: application/json'
+#--data-raw '{ "database:redis:creator": "Salvatore Sanfilippo" }'
+POST http://localhost:8080/api/redis/strings
+Content-Type: application/json
+
+{
+  "database:redis:creator": "Salvatore Sanfilippo"
+}
+
+###
+
+
 # curl --location --request GET 'http://localhost:8080/api/redis/strings/database:redis:creator'
 GET http://localhost:8080/api/redis/strings/database:redis:creator
 
 ###
 
-# curl --location --request POST 'http://localhost:8080/api/redis/strings'
-# --header 'Content-Type: application/json'
-# --data-raw '{ "database:redis:creator": "Salvatore Sanfilippo" }'
-POST http://localhost:8080/api/redis/strings
-Content-Type: application/json
+# curl --location --request GET 'http://localhost:8080/api/users/'
+GET http://localhost:8080/api/users/
 
-{ "database:redis:creator": "Salvatore Sanfilippo" }
+###
+
+# curl --location --request GET 'http://localhost:8080/api/users/?email=donald.gibson@example.com'
+GET http://localhost:8080/api/users/?email=donald.gibson@example.com
+
+###
+
+# curl --location --request GET 'http://localhost:8080/api/books/'
+GET http://localhost:8080/api/books/
+
+###
+
+# curl --location --request GET 'http://localhost:8080/api/books/1680503545'
+GET http://localhost:8080/api/books/1680503545
+
+###
+
+# curl --location --request GET 'http://localhost:8080/api/books/categories'
+GET http://localhost:8080/api/books/categories
+
+###
+
+# curl --location --request GET 'http://localhost:8080/api/books/?size=25&page=2'
+GET http://localhost:8080/api/books/?size=25&page=2
+
+###
+
+# curl --location --request GET 'http://localhost:8080/api/carts/dcd6a6c3-59d6-43b4-8750-553d159cdeb8'
+GET http://localhost:8080/api/carts/dcd6a6c3-59d6-43b4-8750-553d159cdeb8
+
+###
+
+# curl --location --request GET 'http://localhost:8080/api/books/search/?q=%25scal%25'
+GET http://localhost:8080/api/books/search/?q=%25scal%25
 
 ###
 
@@ -22,6 +65,12 @@ GET http://localhost:8080/api/books/search/?q=%25scal%25
 GET http://localhost:8080/api/books/authors/?q=brian%20w
 
 ###
+
+# curl --location --request GET 'http://localhost:8080/api/books/authors/?q=brian%20sa'
+GET http://localhost:8080/api/books/authors/?q=brian%20sa
+
+###
+
 # curl --location --request GET 'http://localhost:8080/api/recommendations/user/55214615117483454'
 GET http://localhost:8080/api/recommendations/user/55214615117483454
 
