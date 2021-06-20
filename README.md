@@ -1,16 +1,8 @@
 # RedisConf 2021
 
-Workshop
-Introductions
 # Redis and Spring: Building High Performance RESTful APIs
 
-
 ## INTRODUCTIONS
-
-
-Brian Sam-Bodden (bsb@redislabs.com)
-Andrew Brookins (andrew.brookins@redislabs.com)
-.
 
 Welcome to Redis and Spring: Building High Performance REST APIs. I'm Brian Sam-Bodden, Developer Advocate at Redis Labs. My teaching assistant for this course is the illustrious Andrew Brookins, who you may recognize from our Redis University YouTube channel.
 
@@ -57,13 +49,7 @@ You'll also need the following installed on your machine:
 
 We're here to support your learning through a dedicated Discord channel that I'll be monitoring along with other teaching assistants. Join us on the Redis Discord server. When you enter the server, type:
 
-Spring and Redis: Up and Running
-Spring and Redis: Up and Running
-
-
-Brian Sam-Bodden (bsb@redislabs.com)
-Andrew Brookins (andrew.brookins@redislabs.com)
-
+# Spring and Redis: Up and Running
 
 ## OBJECTIVES
 
@@ -80,7 +66,6 @@ In this lesson, you will learn:
   If you get stuck:
 - The progress made in this lesson is available on the redi2read github repository at https://github.com/redis-developer/redi2read/tree/course/milestone-1
 
-﻿
 
 ## CREATING A SKELETON SPRING BOOT APPLICATION FROM SCRATCH!
 
@@ -115,11 +100,10 @@ Unzip the downloaded file (named redi2read.zip) in a suitable directory. For exa
 
 
 
-
+```shell
 cd ~/my-directory
-
 unzip ~/Downloads/redi2read.zip
-
+```
 
 
 ## ADDING REDISMOD-DOCKER-COMPOSE GIT SUBMODULE
@@ -129,17 +113,12 @@ Now that you have downloaded and unzipped the generated Spring Initializr applic
 
 You should have a full Maven-based Spring Boot application. Since we are going to be adding submodules, let’s put the application in git:
 
-```
+```shell
 echo "# redi2read" >> README.md
-
 git init
-
 git commit --allow-empty -m "git: initial empty commit"
-
 git add README.md
-
 git commit -m "feat: spring boot + redis initializr app"
-
 git branch -M main
 ```
 
@@ -166,9 +145,9 @@ Modules included in the container:
 - RedisGears: a dynamic execution framework
 
 To add the submodule, we use the git submodule command at the root of the project:
-
+```shell
 git submodule add git@github.com:redis-developer/redismod-docker-compose.git docker
-
+```
 
 The command adds the contents of the passed repository under the folder named “docker,” which the command will create.
 
@@ -181,69 +160,50 @@ The sample data for the application is also provided as a separate Git repo that
 
 The raw data for our application consists of a collection of JSON documents, representing books and users.
 
-Books
+### Books
 
 
 The collection of JSON documents for book data comes from https://books.googleapis.com. Each file is labelled with the keyword/category used to construct it and an incrementing integer (some categories have more books than others) resulting in JSON such as:
-```
+```json
 {
-
 "pageCount":304,
-
 "thumbnail":"http:\/\/books.google.com\/books\/content?id=prtSDwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-
 "price":42.99,
-
 "subtitle":null,
-
 "description":"Drowning in unnecessary complexity, unmanaged state, and tangles of spaghetti code? In the best tradition of Lisp, Clojure gets out of your way so you can focus on expressing simple solutions to hard problems.",
-
 "language":"en",
-
 "currency":"USD",
-
 "id":"1680505726",
-
 "title":"Programming Clojure",
-
 "infoLink":"https:\/\/play.google.com\/store\/books\/details?id=prtSDwAAQBAJ&source=gbs_api",
-
 "authors":[
-
 "Alex Miller",
-
 "Stuart Halloway",
-
 "Aaron Bedra"
-
 ]
-
 }
 ```
 
 We have an ID (the book ISBN), title, subtitle, description, page count, price, currency, language, thumbnail URL, a link to more information (the “infoLink” field), and an array of authors.
 
 
-Users
+### Users
 
 The user data was randomly created using https://randomuser.me, which generated JSON like:
-```
+```json
 {
-
 "password": "9yNvIO4GLBdboI",
-
 "name": "Georgia Spencer",
-
 "id": -5035019007718357598,
-
 "email": "georgia.spencer@example.com"
-
 }
 ```
 
 To add the submodule use the following command:
 
-```git submodule add git@github.com:redis-developer/redi2read-data.git src/main/resources/data```
+```shell
+git submodule add git@github.com:redis-developer/redi2read-data.git src/main/resources/data
+```
 
 
 This submodule will load under the folder src/main/resource/data within the application folder to facilitate the loading of the data from the classpath. At this point you can commit your work so far to the git repo.
@@ -254,7 +214,9 @@ This submodule will load under the folder src/main/resource/data within the appl
 To skip past all the steps outlined above (e.g., initializing a Spring app, adding submodules for data, etc.), simply clone the application with the "--recurse-submodules" option, and check out the branch named “course/milestone-1”
 
 
-```git clone --branch course/milestone-1 git@github.com:redis-developer/redi2read.git --recurse-submodule```
+```shell
+git clone --branch course/milestone-1 git@github.com:redis-developer/redi2read.git --recurse-submodule
+```
 
 
 
@@ -271,17 +233,11 @@ To start our Docker Redis image, we’ll use the docker-compose command as follo
 You should see output similar to this:
 ```
 Creating network "redi2read_default" with the default driver
-
 Creating redi2read_redis_1 ... done
-
 Attaching to redi2read_redis_1
-
 redis_1 | 1:C 01 Apr 2021 05:19:27.593 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
-
 redis_1 | 1:C 01 Apr 2021 05:19:27.593 # Redis version=6.0.1, bits=64, commit=00000000, modified=0, pid=1, just started
-
 redis_1 | 1:C 01 Apr 2021 05:19:27.593 # Configuration loaded
-
 redis_1 | 1:M 01 Apr 2021 05:19:27.600 * Running mode=standalone, port=6379.
 ```
 
@@ -294,20 +250,16 @@ The redis-cli is the Redis command line interface, a simple program that allows 
 
 
 Find the container name using `docker container ls`:
-```
+```shell
 $ docker container ls
-
 CONTAINER ID  IMAGE               COMMAND                 CREATED         STATUS        PORTS                   NAMES
-
 0f99ea35b9c1  redislabs/redismod  "redis-server --load…"  57 minutes ago  Up 7 minutes  0.0.0.0:6379->6379/tcp  docker_redis_1
 ```
 
 With the name `docker_redis_1` we can run bash in the container and then start the redis-cli:
-```
+```shell
 $ docker exec -it docker_redis_1 bash
-
 root@0f99ea35b9c1:/data# redis-cli
-
 127.0.0.1:6379>
 ```
 
@@ -318,7 +270,6 @@ root@0f99ea35b9c1:/data# redis-cli
 If you already have the Redis CLI installed locally, you can launch it by simply entering:
 ```
 $ redis-cli
-
 127.0.0.1:6379>
 ```
 
@@ -329,13 +280,9 @@ $ redis-cli
 The most basic of commands, PING is used to “ping” the server. If we get a response back, we know that the Redis server is alive and kicking:
 ```
 127.0.0.1:6379> PING
-
 PONG
-
 127.0.0.1:6379> PING Marco!
-
 "Marco!"
-
 127.0.0.1:6379>
 ```
 
@@ -345,61 +292,33 @@ PONG
 Since we have a customized Redis instance which includes several Redis modules, we can check for which modules have been installed:
 ```
 127.0.0.1:6379> MODULE LIST
-
 1) 1) "name"
-
 2) "search"
-
 3) "ver"
-
 4) (integer) 20006
-
 2) 1) "name"
-
 2) "graph"
-
 3) "ver"
-
 4) (integer) 20215
-
 3) 1) "name"
-
 2) "ReJSON"
-
 3) "ver"
-
 4) (integer) 10007
-
 4) 1) "name"
-
 2) "bf"
-
 3) "ver"
-
 4) (integer) 20205
-
 5) 1) "name"
-
 2) "timeseries"
-
 3) "ver"
-
 4) (integer) 10408
-
 6) 1) "name"
-
 2) "ai"
-
 3) "ver"
-
 4) (integer) 10002
-
 7) 1) "name"
-
 2) "rg"
-
 3) "ver"
-
 4) (integer) 10006
 ```
 
@@ -410,15 +329,10 @@ Since we have a customized Redis instance which includes several Redis modules, 
 Keys are unique identifiers, whose value can be any one of the data types that Redis supports. These data types range from simple Strings, to Lists, Sets, and even Streams. Each data type has its own set of behaviors and commands associated with it.
 ```
 127.0.0.1:6379> SET myname "Brian"
-
 OK
-
 127.0.0.1:6379> GET myname
-
 "Brian"
-
 127.0.0.1:6379> TYPE myname
-
 string
 ```
 
@@ -438,10 +352,6 @@ Here's some resources that we think will be useful to you as you discover Redis:
 # Spring Data Redis Up and Running
 
 
-Brian Sam-Bodden (bsb@redislabs.com)
-Andrew Brookins (andrew.brookins@redislabs.com)
-
-
 ## OBJECTIVES
 
 
@@ -458,7 +368,6 @@ In this lesson, students will learn:
 
 If you get stuck:
 - The progress made in this lesson is available on the redi2read github repository at https://github.com/redis-developer/redi2read/tree/course/milestone-2
-  ﻿
 
 
 ## INTRODUCING SPRING DATA REDIS
@@ -480,29 +389,21 @@ We will start by configuring a RedisTemplate, a class that provides a thread-saf
 Start from the main application class, Redi2readApplication, located at src/main/java/com/redislabs/edu/redi2read/Redi2readApplication.java.
 
 Add a @Bean annotated method called redisTemplate, which takes a RedisConnectionFactory and returns a RedisTemplate. This method will provide a configured bean of type RedisTemplate in the Spring container. We can inject this bean wherever we need to access Redis.
-```
+```java
 @Bean
-
 public RedisTemplate<?, ?> redisTemplate(RedisConnectionFactory connectionFactory) {
-
 RedisTemplate<?, ?> template = new RedisTemplate<>();
-
 template.setConnectionFactory(connectionFactory);
 
-
-
 return template;
-
 }
 ```
  
 
 This requires the following imports:
-```
+```java
 import org.springframework.context.annotation.Bean;
-
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-
 import org.springframework.data.redis.core.RedisTemplate;
 ```
 
@@ -536,93 +437,73 @@ spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.ser
 To test the RedisTemplate, we’ll create a REST controller and use it to perform some operations against our Redis instance.
 
 We will add the controller under the src/main/java/com/redislabs/edu/redi2read/controllers folder, which means it’ll live in the com.redislabs.edu.redi2read.controllers package.
-```
+```java
 package com.redislabs.edu.redi2read.controllers;
 
-
-
 public class HelloRedisController {
-
- 
 
 }
 ```
 
 
 Next, let’s annotate the class with the @RestController and the @RequestMapping annotations. The controller will now listen to requests rooted at http://localhost:8080/api/redis.
-```
+```java
 @RestController
-
 @RequestMapping("/api/redis")
-
 public class HelloRedisController {
-
- 
 
 }
 ```
 
 Add the necessary import as shown next:
 
-```
+```java
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import org.springframework.web.bind.annotation.RestController;
 ```
 
 Next, let’s inject an @Autowired instance of RedisTemplate. Notice that we will use concrete classes for the K and V parameter classes in RedisTemplate<K,V>. K is the Redis key type (usually a String) and V, the Redis value type (i.e., something that maps to a Redis data structure).
-```
+```java
 @RestController
-
 @RequestMapping("/api/redis")
-
 public class HelloRedisController {
 
-
-
 @Autowired
-
 private RedisTemplate<String, String> template;
-
 }
 ```
 
 Add the necessary import as shown next:
-```
+```java
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.data.redis.core.RedisTemplate;
 ```
 
 Now, all we need is a controller method to run some Redis commands. We will use the Redis SET command (https://redis.io/commands/set) as we previously demonstrated using the Redis CLI.
 
 First, we’ll create a String that will serve to prefix the keys that we write to Redis:
-```
+```java
 private static final String STRING_KEY_PREFIX = "redi2read:strings:";
 ```
 
 The method is annotated with the @PostMapping with a path of /strings, making the effective path for our post /api/redis/strings. The @Request body and the return value of the method is a Map.Entry<String, String> which is convenient when dealing with name-value pairs.
-```
+```java
 @PostMapping("/strings")
-
 @ResponseStatus(HttpStatus.CREATED)
-
 public Map.Entry<String, String> setString(@RequestBody Map.Entry<String, String> kvp) {
-
 return kvp;
-
 }
 ```
 
 Add the necessary import as shown next:
-```
+```java
 import org.springframework.web.bind.annotation.PostMapping;
-
 import org.springframework.web.bind.annotation.ResponseStatus;
 ```
 
 If we launch the application now with:
-```
+```shell
 ./mvnw clean spring-boot:run
 ```
  
@@ -634,26 +515,21 @@ $ curl --location --request POST 'http://localhost:8080/api/redis/strings' \
 --header 'Content-Type: application/json' \
 
 --data-raw '{ "database:redis:creator": "Salvatore Sanfilippo" }'
-
+```
+```json
 {"database:redis:creator":"Salvatore Sanfilippo"}
 ```
 
 
 This results in the JSON payload being echoed back. Let's complete the implementation of the setString method so that we can write a Redis string to the database:
 
-```
+```java
 @PostMapping("/strings")
-
 @ResponseStatus(HttpStatus.CREATED)
-
 public Map.Entry<String, String> setString(@RequestBody Map.Entry<String, String> kvp) {
-
 template.opsForValue().set(STRING_KEY_PREFIX + kvp.getKey(), kvp.getValue());
 
-
-
 return kvp;
-
 }
 ```
 
@@ -691,44 +567,34 @@ If we use the KEYS * command, we can see all of the keys stored in Redis (don’
 We can now write strings to Redis through our REST controller.
 
 Next, let’s add a corresponding GET method to our controller to read string values:
-```
+```java
 @GetMapping("/strings/{key}")
-
 public Map.Entry<String, String> getString(@PathVariable("key") String key) {
-
 String value = template.opsForValue().get(STRING_KEY_PREFIX + key);
 
-
-
 if (value == null) {
-
 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "key not found");
-
 }
 
-
-
 return new SimpleEntry<String, String>(key, value);
-
 }
 ```
 
 
 With imports:
-```
+```java
 import java.util.AbstractMap.SimpleEntry;
 
 import org.springframework.web.bind.annotation.GetMapping;
-
 import org.springframework.web.bind.annotation.PathVariable;
-
 import org.springframework.web.server.ResponseStatusException;
 ```
 
 We can now issue a GET request to retrieve String keys:
 ```
 $ curl --location --request GET 'http://localhost:8080/api/redis/strings/database:redis:creator'
-
+```
+```json
 {"database:redis:creator":"Salvatore Sanfilippo"}
 ```
 
@@ -738,32 +604,20 @@ On the Redis CLI monitor you should see:
 
 
 Note that in order to return an error on a key not found, we have to check the result for null and throw an appropriate exception.
-```
+```json
 {
-
 "timestamp": "2021-04-02T07:45:10.303+00:00",
-
 "status": 404,
-
 "error": "Not Found",
-
 "trace": "org.springframework.web.server.ResponseStatusException: 404...\n",
-
 "message": "key not found",
-
 "path": "/api/redis/strings/database:neo4j:creator"
-
 }
 ```
 
 Keep in mind that this is a “development time” exception, appropriate to be shown on an error page meant for developers. Likely, we would intercept this exception and create an API appropriate response (likely just the status and error fields above).
-Object Mapping & Redis Repositories
 
 # Object Mapping & Redis Repositories
-
-
-Brian Sam-Bodden (bsb@redislabs.com)
-Andrew Brookins (andrew.brookins@redislabs.com)
 
 
 ## OBJECTIVES
@@ -781,7 +635,6 @@ In this lesson, you will learn:
   If you get stuck:
 - The progress made in this lesson is available on the redi2read github repository at https://github.com/redis-developer/redi2read/tree/course/milestone-3
 
-﻿
 
 ## USERS AND ROLES
 
@@ -801,17 +654,12 @@ In this section, we will embark on the creation of the Redi2Read domain models. 
 
 Let’s start by creating the simplest of our domain’s classes, the Role class under the directory src/main/java/com/redislabs/edu/redi2read/models. Let’s name the file Role.java with the following contents:
 
-```
+```java
 package com.redislabs.edu.redi2read.models;
-
-
 
 import lombok.Data;
 
-
-
 @Data
-
 public class Role {
 
 private String id;
@@ -860,111 +708,60 @@ The User model will be used in a registration/signup method. To allow for server
 ```
 
 Now we can create the User class with the following contents:
-```
+```java
 package com.redislabs.edu.redi2read.models;
 
-
-
 import java.util.HashSet;
-
 import java.util.Set;
 
-
-
 import javax.validation.constraints.Email;
-
 import javax.validation.constraints.NotNull;
-
 import javax.validation.constraints.Size;
 
-
-
 import org.springframework.data.annotation.Id;
-
 import org.springframework.data.annotation.Reference;
-
 import org.springframework.data.annotation.Transient;
-
 import org.springframework.data.redis.core.RedisHash;
-
 import org.springframework.data.redis.core.index.Indexed;
 
-
-
 import lombok.Data;
-
 import lombok.EqualsAndHashCode;
-
 import lombok.ToString;
 
-
-
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-
 @ToString(onlyExplicitlyIncluded = true)
-
 @Data
-
 @RedisHash
-
 public class User {
 
 @Id
-
 @ToString.Include
-
 private String id;
 
-
-
 @NotNull
-
 @Size(min = 2, max = 48)
-
 @ToString.Include
-
 private String name;
 
-
-
 @NotNull
-
 @Email
-
 @EqualsAndHashCode.Include
-
 @ToString.Include
-
 @Indexed
-
 private String email;
 
-
-
 @NotNull
-
 private String password;
 
-
-
 @Transient
-
 private String passwordConfirm;
 
-
-
 @Reference
-
 private Set<Role> roles = new HashSet<Role>();
 
-
-
 public void addRole(Role role) {
-
 roles.add(role);
-
 }
-
 }
 ```
 
@@ -990,23 +787,15 @@ Now that we have two models properly annotated, we need associated repositories 
 
 Under the src/main/java/com/redislabs/edu/redi2read/repositories let's create the RoleRepository interface as follows:
 
-```
+```java
 package com.redislabs.edu.redi2read.repositories;
-
-
 
 import com.redislabs.edu.redi2read.models.Role;
 
-
-
 import org.springframework.data.repository.CrudRepository;
-
 import org.springframework.stereotype.Repository;
 
-
-
 @Repository
-
 public interface RoleRepository extends CrudRepository<Role, String> {
 
 }
@@ -1025,35 +814,21 @@ Let’s test the RoleRepository by using a CommandLineRunner implementation. A S
 A Spring Boot application can have many CommandLineRunners; to control the order of their execution, we can further annotate them with the @Order annotation.
 
 Create the directory src/main/java/com/redislabs/edu/redi2read/boot and then add the CreateRoles class:
-```
+```java
 package com.redislabs.edu.redi2read.boot;
 
-
-
 import org.springframework.boot.CommandLineRunner;
-
 import org.springframework.core.annotation.Order;
-
 import org.springframework.stereotype.Component;
 
-
-
 @Component
-
 @Order(1)
-
 public class CreateRoles implements CommandLineRunner {
 
-
-
 @Override
-
 public void run(String... args) throws Exception {
-
 System.out.println(">>> Hello from the CreateRoles CommandLineRunner...");
-
 }
-
 }
 ```
 
